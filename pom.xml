@@ -48,6 +48,16 @@
 			<groupId>net.imagej</groupId>
 			<artifactId>imagej-mesh-io</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>imagej</groupId>
+			<artifactId>ij</artifactId>
+			<version>1.43</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.scif</groupId>
+			<artifactId>scifio</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
