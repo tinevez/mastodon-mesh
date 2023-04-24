@@ -10,6 +10,7 @@ import org.mastodon.mesh.alg.MarchingCubesBooleanType;
 import org.mastodon.mesh.alg.MarchingCubesRealType;
 import org.mastodon.mesh.alg.MeshConnectedComponents;
 import org.mastodon.mesh.alg.RemoveDuplicateVertices;
+import org.mastodon.mesh.alg.SimplifyMesh;
 import org.mastodon.mesh.alg.TwoManifold;
 
 import net.imagej.mesh.Mesh;
@@ -261,5 +262,27 @@ public class Meshes
 	public static boolean isTwoManifold( final TriMesh mesh )
 	{
 		return TwoManifold.isTwoManifold( mesh );
+	}
+
+	/**
+	 * Simplifies a given mesh. Normals and uv coordinates will be ignored and
+	 * not added to the output mesh.
+	 *
+	 * @param mesh
+	 *            Source mesh
+	 * @param target_percent
+	 *            the amount in percent to attempt to achieve. For example:
+	 *            0.25f would result in creating a mesh with 25% of triangles
+	 *            contained in the original.
+	 * @param agressiveness
+	 *            sharpness to increase the threshold. 5..8 are good numbers.
+	 *            more iterations yield higher quality. Minimum 4 and maximum 20
+	 *            are recommended.
+	 * @return the simplified mesh The result will not include normals or uv
+	 *         coordinates.
+	 */
+	public static TriMesh simplify( final TriMesh mesh, final double target_percent, final double agressiveness )
+	{
+		return new SimplifyMesh( mesh ).simplify( target_percent, agressiveness );
 	}
 }
