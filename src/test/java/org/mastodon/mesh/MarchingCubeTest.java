@@ -67,6 +67,16 @@ public class MarchingCubeTest
 			System.out.println( " # " + i + ": " + cc );
 			PLYMeshIO.save( cc, filePath + "-c1-" + i + ".ply" );
 		}
+		System.out.println( "Simplifying to 10%:" );
+		i = 0;
+		for ( final TriMesh cc : MeshConnectedComponents.iterable( mesh1 ) )
+		{
+			i++;
+			final TriMesh simplified = Meshes.simplify( cc, 0.1, 10 );
+			System.out.println( " # " + i + ": " + simplified );
+			PLYMeshIO.save( simplified, filePath + "-c1-simplified-" + i + ".ply" );
+		}
+
 		System.out.println();
 
 		// Second channel is the mask.
