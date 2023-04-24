@@ -3,9 +3,9 @@ package org.mastodon.mesh.alg;
 import org.mastodon.RefPool;
 import org.mastodon.collection.ObjectRefMap;
 import org.mastodon.collection.RefMaps;
-import org.mastodon.mesh.Face;
-import org.mastodon.mesh.FaceAdder;
 import org.mastodon.mesh.TriMesh;
+import org.mastodon.mesh.Triangle;
+import org.mastodon.mesh.TriangleAdder;
 import org.mastodon.mesh.Vertex;
 
 import net.imglib2.RealLocalizable;
@@ -32,7 +32,7 @@ public class RemoveDuplicateVertices
 		final Vertex ovref = out.vertexRef();
 
 		int trianglesCount = 0;
-		for ( final Face triangle : in.triangles() )
+		for ( final Triangle triangle : in.triangles() )
 		{
 			final Vertex p0 = triangle.getVertex0( ivref0 );
 			final Vertex p1 = triangle.getVertex1( ivref1 );
@@ -49,7 +49,8 @@ public class RemoveDuplicateVertices
 		in.releaseRef( ivref1 );
 		in.releaseRef( ivref2 );
 
-		final FaceAdder faceAdder = out.faceAdder();
+		final TriangleAdder triangleAdder = out.triangleAdder();
+		final Triangle tref = out.triangleRef();
 		final Vertex ovref0 = out.vertexRef();
 		final Vertex ovref1 = out.vertexRef();
 		final Vertex ovref2 = out.vertexRef();
@@ -59,27 +60,35 @@ public class RemoveDuplicateVertices
 			final Vertex v0 = pool.getObjectIfExists( triangle[ 0 ], ovref0 );
 			final Vertex v1 = pool.getObjectIfExists( triangle[ 1 ], ovref1 );
 			final Vertex v2 = pool.getObjectIfExists( triangle[ 2 ], ovref2 );
-			faceAdder.add( v0, v1, v2 );
+			triangleAdder.add( v0, v1, v2, tref );
 		}
 		out.releaseRef( ovref0 );
 		out.releaseRef( ovref1 );
 		out.releaseRef( ovref2 );
-		faceAdder.releaseRefs();
+		out.releaseRef( tref );
+		triangleAdder.releaseRefs();
 
 		return out;
 	}
 
-	private static int getVertex( final ObjectRefMap< String, Vertex > vertices, final RealLocalizable p, final int precision, final TriMesh out, final Vertex vref )
+	private static int getVertex(
+			final ObjectRefMap< String, Vertex > vertices,
+			final RealLocalizable p,
+			final int precision,
+			final TriMesh out,
+			final Vertex vref )
 	{
 		final String hash = getHash( p, precision );
 		final Vertex vertex = vertices.get( hash );
-		if ( vertex == null )
-			return createVertex( p, precision, out, vref );
+		if ( vertex != null )
+			return vertex.getInternalPoolIndex();
 
-		return vertex.getInternalPoolIndex();
+		final Vertex newVertex = createVertex( p, precision, out, vref );
+		vertices.put( hash, newVertex );
+		return newVertex.getInternalPoolIndex();
 	}
 
-	private static int createVertex( final RealLocalizable pos, final int precision, final TriMesh out, final Vertex ref )
+	private static Vertex createVertex( final RealLocalizable pos, final int precision, final TriMesh out, final Vertex ref )
 	{
 		final double factor = Math.pow( 10, precision );
 		final double x = Math.round( pos.getDoublePosition( 0 ) * factor ) / factor;
@@ -89,7 +98,7 @@ public class RemoveDuplicateVertices
 		v.setPosition( x, 0 );
 		v.setPosition( y, 1 );
 		v.setPosition( z, 2 );
-		return v.getInternalPoolIndex();
+		return v;
 	}
 
 	private static String getHash( final RealLocalizable p, final int precision )
