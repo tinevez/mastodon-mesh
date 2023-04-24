@@ -1,7 +1,9 @@
 package org.mastodon.mesh;
 
 import org.mastodon.collection.IntRefMap;
+import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefMaps;
+import org.mastodon.collection.RefSet;
 import org.mastodon.mesh.alg.MarchingCubesBooleanType;
 import org.mastodon.mesh.alg.MarchingCubesRealType;
 import org.mastodon.mesh.alg.RemoveDuplicateVertices;
@@ -164,6 +166,37 @@ public class Meshes
 			v.setPosition( y * scales[ 1 ], 1 );
 			final double z = v.z();
 			v.setPosition( z * scales[ 2 ], 2 );
+		}
+	}
+
+	/**
+	 * Returns the set of vertices part of the specified triangle collection.
+	 * 
+	 * @param triangles
+	 *            the collection of triangles.
+	 * @return a new {@link RefSet}.
+	 */
+	public static final RefSet< Vertex > verticesOf( final Iterable< Triangle > triangles, final TriMesh mesh )
+	{
+		final RefSet< Vertex > vertices = RefCollections.createRefSet( mesh.vertices() );
+		final Vertex v0 = mesh.vertexRef();
+		final Vertex v1 = mesh.vertexRef();
+		final Vertex v2 = mesh.vertexRef();
+		try
+		{
+			for ( final Triangle t : triangles )
+			{
+				vertices.add( t.getVertex0( v0 ) );
+				vertices.add( t.getVertex1( v1 ) );
+				vertices.add( t.getVertex2( v2 ) );
+			}
+			return vertices;
+		}
+		finally
+		{
+			mesh.releaseRef( v0 );
+			mesh.releaseRef( v1 );
+			mesh.releaseRef( v2 );
 		}
 	}
 }
