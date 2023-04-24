@@ -50,17 +50,17 @@ public class Triangle extends PoolObject< Triangle, TrianglePool, ByteMappedElem
 		return String.format( "T%d (V%d -> V%d -> V%d)", getInternalPoolIndex(), v0(), v1(), v2() );
 	}
 
-	private int v0()
+	public int v0()
 	{
 		return pool.vertex0.get( this );
 	}
 
-	private int v1()
+	public int v1()
 	{
 		return pool.vertex1.get( this );
 	}
 
-	private int v2()
+	public int v2()
 	{
 		return pool.vertex2.get( this );
 	}
