@@ -26,7 +26,7 @@ public class Vertex extends AbstractVertex< Vertex, HalfEdge, VertexPool, ByteMa
 	@Override
 	public String toString()
 	{
-		return String.format( "V( %d, X=%.2f, Y=%.2f, Z=%.2f)",
+		return String.format( "V%d (X=%.2f, Y=%.2f, Z=%.2f)",
 				getInternalPoolIndex(),
 				getDoublePosition( 0 ),
 				getDoublePosition( 1 ),
@@ -46,5 +46,19 @@ public class Vertex extends AbstractVertex< Vertex, HalfEdge, VertexPool, ByteMa
 	public double z()
 	{
 		return getDoublePosition( 2 );
+	}
+
+	/**
+	 * Sets the X,Y,Z position of this vertex.
+	 * 
+	 * @param x
+	 * @param y
+	 * @param z
+	 */
+	public void init( final double x, final double y, final double z )
+	{
+		position.setPosition( x, 0 );
+		position.setPosition( y, 1 );
+		position.setPosition( z, 2 );
 	}
 }
