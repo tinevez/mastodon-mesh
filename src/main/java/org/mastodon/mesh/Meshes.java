@@ -1,12 +1,16 @@
 package org.mastodon.mesh;
 
+import java.util.Iterator;
+
 import org.mastodon.collection.IntRefMap;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefMaps;
 import org.mastodon.collection.RefSet;
 import org.mastodon.mesh.alg.MarchingCubesBooleanType;
 import org.mastodon.mesh.alg.MarchingCubesRealType;
+import org.mastodon.mesh.alg.MeshConnectedComponents;
 import org.mastodon.mesh.alg.RemoveDuplicateVertices;
+import org.mastodon.mesh.alg.TwoManifold;
 
 import net.imagej.mesh.Mesh;
 import net.imglib2.FinalRealInterval;
@@ -198,5 +202,64 @@ public class Meshes
 			mesh.releaseRef( v1 );
 			mesh.releaseRef( v2 );
 		}
+	}
+
+	/**
+	 * Returns the number of connected components in this mesh.
+	 * 
+	 * @param mesh
+	 *            the mesh.
+	 * @return the number of connected components.
+	 */
+	public static int nConnectedComponents( final TriMesh mesh )
+	{
+		return MeshConnectedComponents.n( mesh );
+	}
+
+	/**
+	 * Return an iterator over the connected components of the specified mesh.
+	 * <p>
+	 * The connected components are returned as new {@link TriMesh}es with
+	 * objects copied from the source mesh. Object ids and ordering is not
+	 * guaranteed to be the same.
+	 * 
+	 * @param mesh
+	 *            the mesh to split.
+	 * @return a new iterator over its connected components as new meshes.
+	 */
+	public static final Iterator< TriMesh > iterator( final TriMesh mesh )
+	{
+		return MeshConnectedComponents.iterator( mesh );
+	}
+
+	/**
+	 * Return an iterable over the connected components of the specified mesh.
+	 * <p>
+	 * The connected components are returned as new {@link TriMesh}es with
+	 * objects copied from the source mesh. Object ids and ordering is not
+	 * guaranteed to be the same.
+	 * 
+	 * @param mesh
+	 *            the mesh to split.
+	 * @return a new iterable over its connected components as new meshes.
+	 */
+	public static final Iterable< TriMesh > iterable( final TriMesh mesh )
+	{
+		return MeshConnectedComponents.iterable( mesh );
+	}
+
+	/**
+	 * Returns <code>true</code> if the specified mesh is two-manifold.
+	 * <p>
+	 * A two-manifold mesh is a type of mesh that has property that every edge
+	 * on the mesh is shared by exactly two faces.
+	 * 
+	 * @param mesh
+	 *            the mesh to inspect.
+	 * @return <code>true</code> if it is two-manifold.
+	 */
+	public static boolean isTwoManifold( final TriMesh mesh )
+	{
+		return TwoManifold.isTwoManifold( mesh );
 	}
 }
