@@ -32,4 +32,19 @@ public class Vertex extends AbstractVertex< Vertex, HalfEdge, VertexPool, ByteMa
 				getDoublePosition( 1 ),
 				getDoublePosition( 2 ) );
 	}
+
+	public double x()
+	{
+		return getDoublePosition( 0 );
+	}
+
+	public double y()
+	{
+		return getDoublePosition( 1 );
+	}
+
+	public double z()
+	{
+		return getDoublePosition( 2 );
+	}
 }
