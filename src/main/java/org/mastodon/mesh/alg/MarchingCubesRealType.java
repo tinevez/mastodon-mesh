@@ -1,7 +1,7 @@
 package org.mastodon.mesh.alg;
 
 import org.apache.commons.math3.util.MathArrays;
-import org.mastodon.mesh.FaceAdder;
+import org.mastodon.mesh.TriangleAdder;
 import org.mastodon.mesh.TriMesh;
 import org.mastodon.mesh.Vertex;
 
@@ -99,7 +99,7 @@ public class MarchingCubesRealType
 		final Vertex vref0 = output.vertexRef();
 		final Vertex vref1 = output.vertexRef();
 		final Vertex vref2 = output.vertexRef();
-		final FaceAdder faceAdder = output.faceAdder();
+		final TriangleAdder faceAdder = output.triangleAdder();
 
 		final RandomAccess< T > ra = Views.extendZero( input ).randomAccess( Intervals.expand( input, 1 ) );
 		final int[] pos = new int[ 3 ];

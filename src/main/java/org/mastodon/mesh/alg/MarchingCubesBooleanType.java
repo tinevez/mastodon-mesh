@@ -1,7 +1,7 @@
 package org.mastodon.mesh.alg;
 
 import org.apache.commons.math3.util.MathArrays;
-import org.mastodon.mesh.FaceAdder;
+import org.mastodon.mesh.TriangleAdder;
 import org.mastodon.mesh.TriMesh;
 import org.mastodon.mesh.Vertex;
 
@@ -97,7 +97,7 @@ public class MarchingCubesBooleanType
 		final Vertex vref0 = output.vertexRef();
 		final Vertex vref1 = output.vertexRef();
 		final Vertex vref2 = output.vertexRef();
-		final FaceAdder faceAdder = output.faceAdder();
+		final TriangleAdder faceAdder = output.triangleAdder();
 
 		final int minX = ( int ) input.min( 0 ) - 1;
 		final int minY = ( int ) input.min( 1 ) - 1;

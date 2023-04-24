@@ -6,7 +6,7 @@ import org.mastodon.pool.ByteMappedElement;
 public class TriMesh extends GraphImp< VertexPool, HalfEdgePool, Vertex, HalfEdge, ByteMappedElement >
 {
 
-	private final TrianglePool facePool;
+	private final TrianglePool trianglePool;
 
 	public TriMesh()
 	{
@@ -26,24 +26,24 @@ public class TriMesh extends GraphImp< VertexPool, HalfEdgePool, Vertex, HalfEdg
 	public TriMesh( final int nVertices, final int nTriangles, final int nEdges )
 	{
 		super( new HalfEdgePool( nEdges, new VertexPool( nVertices ) ) );
-		facePool = new TrianglePool( nTriangles, vertexPool, this );
-		edgePool.setLinkedFacePool( facePool );
+		trianglePool = new TrianglePool( nTriangles, vertexPool, this );
+		edgePool.setLinkedFacePool( trianglePool );
 	}
 
 	public TrianglePool triangles()
 	{
-		return facePool;
+		return trianglePool;
 	}
 
-	public FaceAdder faceAdder()
+	public TriangleAdder triangleAdder()
 	{
-		return new FaceAdder( this );
+		return new TriangleAdder( this );
 	}
 
 	@Override
 	public String toString()
 	{
 		return String.format( "TriMesh %d vertices, %d edges, %d faces",
-				vertexPool.size(), edgePool.size(), facePool.size() );
+				vertexPool.size(), edgePool.size(), trianglePool.size() );
 	}
 }

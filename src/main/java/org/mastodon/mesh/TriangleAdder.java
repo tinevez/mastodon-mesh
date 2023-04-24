@@ -9,7 +9,7 @@ import net.imglib2.RealLocalizable;
  * @author Jean-Yves Tinevez
  *
  */
-public class FaceAdder
+public class TriangleAdder
 {
 
 	private final TrianglePool triangles;
@@ -26,7 +26,7 @@ public class FaceAdder
 
 	private final HalfEdge eref4;
 
-	FaceAdder( final TriMesh mesh )
+	TriangleAdder( final TriMesh mesh )
 	{
 		this.triangles = mesh.triangles();
 		this.crossProduct = new float[ 3 ];

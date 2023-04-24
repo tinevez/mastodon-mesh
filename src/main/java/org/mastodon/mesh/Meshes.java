@@ -73,7 +73,7 @@ public class Meshes
 		mesh.releaseRef( vref );
 
 		// Add triangles and half-edges.
-		final FaceAdder adder = mesh.faceAdder();
+		final TriangleAdder adder = mesh.triangleAdder();
 		final Vertex vref0 = mesh.vertexRef();
 		final Vertex vref1 = mesh.vertexRef();
 		final Vertex vref2 = mesh.vertexRef();

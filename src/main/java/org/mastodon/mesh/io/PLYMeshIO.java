@@ -16,7 +16,7 @@ import org.mastodon.collection.IntRefMap;
 import org.mastodon.collection.RefIntMap;
 import org.mastodon.collection.RefMaps;
 import org.mastodon.mesh.Triangle;
-import org.mastodon.mesh.FaceAdder;
+import org.mastodon.mesh.TriangleAdder;
 import org.mastodon.mesh.TriMesh;
 import org.mastodon.mesh.Vertex;
 import org.scijava.util.FileUtils;
@@ -137,7 +137,7 @@ public class PLYMeshIO
 			throw new IOException( "Could not find the 'face' element in file." );
 
 		// Add triangles to the mesh.
-		final FaceAdder adder = mesh.faceAdder();
+		final TriangleAdder adder = mesh.triangleAdder();
 		final Vertex vref0 = mesh.vertexRef();
 		final Vertex vref1 = mesh.vertexRef();
 		final Vertex vref2 = mesh.vertexRef();
