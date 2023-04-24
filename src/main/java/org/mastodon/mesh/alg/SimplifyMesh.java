@@ -1,47 +1,3 @@
-/*-
- * #%L
- * 3D mesh structures for ImageJ.
- * %%
- * Copyright (C) 2016 - 2020 University of Idaho, Royal Veterinary College, and
- * Board of Regents of the University of Wisconsin-Madison.
- * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
-/*
-
-    Mesh Simplification
-    (C) by Sven Forstmann in 2014
-
-    derived from: https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification
-    and: https://github.com/timknip/mesh-decimate/blob/master/src/simplify.js
-
-    License : MIT
-    http://opensource.org/licenses/MIT
-
-    Converted to java / jmonkeyengine by James Khan a.k.a jayfella
-
- */
-
 package org.mastodon.mesh.alg;
 
 import java.util.Iterator;
@@ -55,8 +11,42 @@ import org.mastodon.mesh.TriangleAdder;
 import net.imglib2.RealPoint;
 
 /**
+ * Fast quadratic mesh simplification.
+ * <p>
+ * 
+ * 
+ * The paper that started this is the seminal article by Garland and Heckbert on
+ * <a href="http://www.cs.cmu.edu/~./garland/Papers/quadrics.pdf">quadratic mesh
+ * decimation</a> (1995).
+ * 
+ * But there are much more info in
+ * <a href="https://mgarland.org/files/papers/thesis-onscreen.pdf">Garland's
+ * PhD</a>.
+ * 
+ * <p>
+ * Then, in 2014 Sven Forstmann proposed an implementation of this with speed
+ * improvement called "Fast Quadric Mesh Simplification". The speed improvement
+ * relies on avoiding sorting triangles to know which to delete. The C++ code
+ * repo is <a href=
+ * "https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification">here</a> (MIT
+ * license). The <a href=
+ * "https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification/blob/master/src.cmd/Simplify.h">simplify
+ * function</a>.
+ * <p>
+ * Then James Khan (JayFella) ported it to Java in 2018, using the JMonkeyEngine
+ * data structure. The port is discussed <a href=
+ * "https://hub.jmonkeyengine.org/t/isosurface-mesh-simplifier/41046/1">here</a>.
+ * The code by JayFella (MIT license) is on a
+ * <a href="https://gist.github.com/jayfella/00a328b2dbdf6304078a821143b7aef7">a
+ * gist</a>.
+ * <p>
+ * It was then ported by Deborah Schmidt in 2020, to use the ImageJ-Mesh data
+ * structure instead of JMesh. Then finally I (JY) simply translated Deborah's
+ * code to use a mastodon TriMesh instead.
+ * 
  * @author James Khan / jayfella
  * @author Deborah Schmidt / frauzufall
+ * @author Jean-Yves Tinevez
  */
 public class SimplifyMesh
 {
