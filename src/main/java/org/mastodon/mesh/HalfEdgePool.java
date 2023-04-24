@@ -19,7 +19,7 @@ public class HalfEdgePool extends AbstractEdgePool< HalfEdge, Vertex, ByteMapped
 
 	final IntAttribute< HalfEdge > face;
 
-	FacePool facePool;
+	TrianglePool facePool;
 
 	HalfEdgePool( final int initialCapacity, final VertexPool vertexPool )
 	{
@@ -36,7 +36,7 @@ public class HalfEdgePool extends AbstractEdgePool< HalfEdge, Vertex, ByteMapped
 		return new HalfEdge( this );
 	}
 
-	void setLinkedFacePool( final FacePool facePool )
+	void setLinkedFacePool( final TrianglePool facePool )
 	{
 		this.facePool = facePool;
 	}

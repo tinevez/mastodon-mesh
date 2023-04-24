@@ -15,7 +15,7 @@ import java.util.List;
 import org.mastodon.collection.IntRefMap;
 import org.mastodon.collection.RefIntMap;
 import org.mastodon.collection.RefMaps;
-import org.mastodon.mesh.Face;
+import org.mastodon.mesh.Triangle;
 import org.mastodon.mesh.FaceAdder;
 import org.mastodon.mesh.TriMesh;
 import org.mastodon.mesh.Vertex;
@@ -237,7 +237,7 @@ public class PLYMeshIO
 		final Vertex vref0 = mesh.vertexRef();
 		final Vertex vref1 = mesh.vertexRef();
 		final Vertex vref2 = mesh.vertexRef();
-		for ( final Face t : mesh.triangles() )
+		for ( final Triangle t : mesh.triangles() )
 		{
 			buffer.put( ( byte ) 3 );
 			buffer.putInt( refToVertId.get( t.getVertex0( vref0 ) ) );
@@ -318,7 +318,7 @@ public class PLYMeshIO
 		final Vertex vref0 = mesh.vertexRef();
 		final Vertex vref1 = mesh.vertexRef();
 		final Vertex vref2 = mesh.vertexRef();
-		for ( final Face t : mesh.triangles() )
+		for ( final Triangle t : mesh.triangles() )
 		{
 			writer.write( "3 " );
 			writer.write( Integer.toString( refToVertId.get( t.getVertex0( vref0 ) ) ) );

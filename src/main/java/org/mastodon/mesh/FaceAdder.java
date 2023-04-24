@@ -12,11 +12,11 @@ import net.imglib2.RealLocalizable;
 public class FaceAdder
 {
 
-	private final FacePool triangles;
+	private final TrianglePool triangles;
 
 	private final float[] crossProduct;
 
-	private final Face ref;
+	private final Triangle ref;
 
 	private final HalfEdge eref1;
 
@@ -46,13 +46,13 @@ public class FaceAdder
 	 * @param v2
 	 * @return
 	 */
-	public Face add(
+	public Triangle add(
 			final Vertex v0,
 			final Vertex v1,
 			final Vertex v2 )
 	{
 		// Object to set.
-		final Face face = triangles.create( ref );
+		final Triangle face = triangles.create( ref );
 
 		final float dx1 = v1.getFloatPosition( 0 ) - v0.getFloatPosition( 0 );
 		final float dy1 = v1.getFloatPosition( 1 ) - v0.getFloatPosition( 1 );

@@ -3,10 +3,10 @@ package org.mastodon.mesh;
 import org.mastodon.pool.ByteMappedElement;
 import org.mastodon.pool.PoolObject;
 
-public class Face extends PoolObject< Face, FacePool, ByteMappedElement >
+public class Triangle extends PoolObject< Triangle, TrianglePool, ByteMappedElement >
 {
 
-	Face( final FacePool pool )
+	Triangle( final TrianglePool pool )
 	{
 		super( pool );
 	}

@@ -29,13 +29,13 @@ public class HalfEdge extends AbstractEdge< HalfEdge, Vertex, HalfEdgePool, Byte
 		return pool.getObjectIfExists( id, ref );
 	}
 
-	public Face face( final Face ref )
+	public Triangle face( final Triangle ref )
 	{
 		final int id = pool.face.get( this );
 		return pool.facePool.getObjectIfExists( id, ref );
 	}
 
-	void init( final HalfEdge next, final HalfEdge previous, final HalfEdge twin, final Face face )
+	void init( final HalfEdge next, final HalfEdge previous, final HalfEdge twin, final Triangle face )
 	{
 		pool.next.set( this, next.getInternalPoolIndex() );
 		pool.previous.set( this, previous.getInternalPoolIndex() );

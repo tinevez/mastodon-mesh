@@ -8,26 +8,26 @@ import org.mastodon.pool.SingleArrayMemPool;
 import org.mastodon.pool.attributes.FloatArrayAttribute;
 import org.mastodon.pool.attributes.IntAttribute;
 
-public class FacePool extends Pool< Face, ByteMappedElement >
+public class TrianglePool extends Pool< Triangle, ByteMappedElement >
 {
 
 	public static final FaceLayout layout = new FaceLayout();
 
-	final IntAttribute< Face > vertex0;
+	final IntAttribute< Triangle > vertex0;
 
-	final IntAttribute< Face > vertex1;
+	final IntAttribute< Triangle > vertex1;
 
-	final IntAttribute< Face > vertex2;
+	final IntAttribute< Triangle > vertex2;
 
-	final FloatArrayAttribute< Face > normal;
+	final FloatArrayAttribute< Triangle > normal;
 
 	final TriMesh mesh;
 
 	final VertexPool vertexPool;
 
-	FacePool( final int initialCapacity, final VertexPool vertexPool, final TriMesh mesh )
+	TrianglePool( final int initialCapacity, final VertexPool vertexPool, final TriMesh mesh )
 	{
-		super( initialCapacity, layout, Face.class, SingleArrayMemPool.factory( ByteMappedElementArray.factory ) );
+		super( initialCapacity, layout, Triangle.class, SingleArrayMemPool.factory( ByteMappedElementArray.factory ) );
 		this.vertexPool = vertexPool;
 		this.mesh = mesh;
 		this.vertex0 = new IntAttribute<>( layout.vertex0, this );
@@ -37,13 +37,13 @@ public class FacePool extends Pool< Face, ByteMappedElement >
 	}
 
 	@Override
-	protected Face createEmptyRef()
+	protected Triangle createEmptyRef()
 	{
-		return new Face( this );
+		return new Triangle( this );
 	}
 
 	@Override
-	public Face create( final Face face )
+	public Triangle create( final Triangle face )
 	{
 		return super.create( face );
 	}
