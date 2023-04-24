@@ -15,9 +15,9 @@ import java.util.List;
 import org.mastodon.collection.IntRefMap;
 import org.mastodon.collection.RefIntMap;
 import org.mastodon.collection.RefMaps;
+import org.mastodon.mesh.TriMesh;
 import org.mastodon.mesh.Triangle;
 import org.mastodon.mesh.TriangleAdder;
-import org.mastodon.mesh.TriMesh;
 import org.mastodon.mesh.Vertex;
 import org.scijava.util.FileUtils;
 import org.smurn.jply.Element;
@@ -138,6 +138,7 @@ public class PLYMeshIO
 
 		// Add triangles to the mesh.
 		final TriangleAdder adder = mesh.triangleAdder();
+		final Triangle tref = mesh.triangleRef();
 		final Vertex vref0 = mesh.vertexRef();
 		final Vertex vref1 = mesh.vertexRef();
 		final Vertex vref2 = mesh.vertexRef();
@@ -146,11 +147,12 @@ public class PLYMeshIO
 			final Vertex v0 = vertexRowMap.get( triangle[ 0 ], vref0 );
 			final Vertex v1 = vertexRowMap.get( triangle[ 1 ], vref1 );
 			final Vertex v2 = vertexRowMap.get( triangle[ 2 ], vref2 );
-			adder.add( v0, v1, v2 );
+			adder.add( v0, v1, v2, tref );
 		}
 		mesh.releaseRef( vref0 );
 		mesh.releaseRef( vref1 );
 		mesh.releaseRef( vref2 );
+		mesh.releaseRef( tref );
 		adder.releaseRefs();
 	}
 

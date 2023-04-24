@@ -1,8 +1,9 @@
 package org.mastodon.mesh.alg;
 
 import org.apache.commons.math3.util.MathArrays;
-import org.mastodon.mesh.TriangleAdder;
 import org.mastodon.mesh.TriMesh;
+import org.mastodon.mesh.Triangle;
+import org.mastodon.mesh.TriangleAdder;
 import org.mastodon.mesh.Vertex;
 
 import net.imglib2.Cursor;
@@ -99,6 +100,7 @@ public class MarchingCubesRealType
 		final Vertex vref0 = output.vertexRef();
 		final Vertex vref1 = output.vertexRef();
 		final Vertex vref2 = output.vertexRef();
+		final Triangle tref = output.triangleRef();
 		final TriangleAdder faceAdder = output.triangleAdder();
 
 		final RandomAccess< T > ra = Views.extendZero( input ).randomAccess( Intervals.expand( input, 1 ) );
@@ -241,7 +243,7 @@ public class MarchingCubesRealType
 								v2.setPosition( y + v2y, 1 );
 								v2.setPosition( z + v2z, 2 );
 
-								faceAdder.add( v0, v1, v2 );
+								faceAdder.add( v0, v1, v2, tref );
 							}
 						}
 					}
@@ -252,6 +254,7 @@ public class MarchingCubesRealType
 		output.releaseRef( vref0 );
 		output.releaseRef( vref1 );
 		output.releaseRef( vref2 );
+		output.releaseRef( tref );
 		faceAdder.releaseRefs();
 
 		return output;

@@ -1,5 +1,7 @@
 package org.mastodon.mesh;
 
+import org.mastodon.pool.PoolCollectionWrapper;
+
 import net.imglib2.RealLocalizable;
 
 /**
@@ -12,11 +14,9 @@ import net.imglib2.RealLocalizable;
 public class TriangleAdder
 {
 
-	private final TrianglePool triangles;
+	private final PoolCollectionWrapper< Triangle > triangles;
 
 	private final float[] crossProduct;
-
-	private final Triangle ref;
 
 	private final HalfEdge eref1;
 
@@ -26,11 +26,13 @@ public class TriangleAdder
 
 	private final HalfEdge eref4;
 
+	private final TriMesh mesh;
+
 	TriangleAdder( final TriMesh mesh )
 	{
+		this.mesh = mesh;
 		this.triangles = mesh.triangles();
 		this.crossProduct = new float[ 3 ];
-		this.ref = triangles.createEmptyRef();
 		this.eref1 = mesh.edgeRef();
 		this.eref2 = mesh.edgeRef();
 		this.eref3 = mesh.edgeRef();
@@ -49,10 +51,22 @@ public class TriangleAdder
 	public Triangle add(
 			final Vertex v0,
 			final Vertex v1,
-			final Vertex v2 )
+			final Vertex v2,
+			final Triangle ref )
 	{
+		// Sanity check.
+		final HalfEdge e1 = mesh.getEdge( v0, v1, eref1 );
+		if ( e1 != null )
+			return null;
+		final HalfEdge e2 = mesh.getEdge( v1, v2, eref2 );
+		if ( e2 != null )
+			return null;
+		final HalfEdge e3 = mesh.getEdge( v2, v0, eref3 );
+		if ( e3 != null )
+			return null;
+
 		// Object to set.
-		final Triangle face = triangles.create( ref );
+		final Triangle triangle = mesh.trianglePool.create( ref );
 
 		final float dx1 = v1.getFloatPosition( 0 ) - v0.getFloatPosition( 0 );
 		final float dy1 = v1.getFloatPosition( 1 ) - v0.getFloatPosition( 1 );
@@ -74,39 +88,28 @@ public class TriangleAdder
 		final float nz = crossProduct[ 2 ];
 
 		// Create face with proper order.
-		triangles.vertex0.setQuiet( face, v0.getInternalPoolIndex() );
-		triangles.vertex1.setQuiet( face, v1.getInternalPoolIndex() );
-		triangles.vertex2.setQuiet( face, v2.getInternalPoolIndex() );
-		triangles.normal.setQuiet( face, 0, nx );
-		triangles.normal.setQuiet( face, 1, ny );
-		triangles.normal.setQuiet( face, 2, nz );
-
-		// Sanity check.
-		final HalfEdge e1 = triangles.mesh.getEdge( v0, v1, eref1 );
-		if ( e1 != null )
-			throw new IllegalArgumentException( "Found an already existing edge from " + v0 + " to " + v1 );
-		final HalfEdge e2 = triangles.mesh.getEdge( v1, v2, eref2 );
-		if ( e2 != null )
-			throw new IllegalArgumentException( "Found an already existing edge from " + v1 + " to " + v2 );
-		final HalfEdge e3 = triangles.mesh.getEdge( v2, v0, eref3 );
-		if ( e3 != null )
-			throw new IllegalArgumentException( "Found an already existing edge from " + v2 + " to " + v0 );
+		mesh.trianglePool.vertex0.setQuiet( triangle, v0.getInternalPoolIndex() );
+		mesh.trianglePool.vertex1.setQuiet( triangle, v1.getInternalPoolIndex() );
+		mesh.trianglePool.vertex2.setQuiet( triangle, v2.getInternalPoolIndex() );
+		mesh.trianglePool.normal.setQuiet( triangle, 0, nx );
+		mesh.trianglePool.normal.setQuiet( triangle, 1, ny );
+		mesh.trianglePool.normal.setQuiet( triangle, 2, nz );
 
 		// Create half edges.
-		final HalfEdge eAB = triangles.mesh.addEdge( v0, v1, eref1 );
-		final HalfEdge eBC = triangles.mesh.addEdge( v1, v2, eref2 );
-		final HalfEdge eCA = triangles.mesh.addEdge( v2, v0, eref3 );
+		final HalfEdge eAB = mesh.addEdge( v0, v1, eref1 );
+		final HalfEdge eBC = mesh.addEdge( v1, v2, eref2 );
+		final HalfEdge eCA = mesh.addEdge( v2, v0, eref3 );
 
-		final HalfEdge twinAB = triangles.mesh.getEdge( v1, v0, eref4 );
-		eAB.init( eBC, eCA, twinAB, face );
+		final HalfEdge twinAB = mesh.getEdge( v1, v0, eref4 );
+		eAB.init( eBC, eCA, twinAB, triangle );
 
-		final HalfEdge twinBC = triangles.mesh.getEdge( v2, v1, eref4 );
-		eBC.init( eCA, eAB, twinBC, face );
+		final HalfEdge twinBC = mesh.getEdge( v2, v1, eref4 );
+		eBC.init( eCA, eAB, twinBC, triangle );
 
-		final HalfEdge twinCA = triangles.mesh.getEdge( v0, v2, eref4 );
-		eCA.init( eAB, eBC, twinCA, face );
+		final HalfEdge twinCA = mesh.getEdge( v0, v2, eref4 );
+		eCA.init( eAB, eBC, twinCA, triangle );
 
-		return face;
+		return triangle;
 	}
 
 	private static final float dot( final float x1, final float y1, final float z1, final float x2, final float y2, final float z2 )
@@ -133,16 +136,23 @@ public class TriangleAdder
 		v[ 2 ] /= l;
 	}
 
+	public boolean exists( final Vertex v0, final Vertex v1, final Vertex v2 )
+	{
+		final boolean is01connected = ( null != mesh.getEdge( v0, v1, eref1 ) || ( null != mesh.getEdge( v1, v0, eref1 ) ) );
+		final boolean is12connected = ( null != mesh.getEdge( v1, v2, eref2 ) || ( null != mesh.getEdge( v2, v1, eref2 ) ) );
+		final boolean is20connected = ( null != mesh.getEdge( v2, v0, eref3 ) || ( null != mesh.getEdge( v0, v2, eref3 ) ) );
+		return is01connected && is12connected && is20connected;
+	}
+
 	/**
 	 * Must not be used after this call.
 	 */
 	public void releaseRefs()
 	{
-		triangles.releaseRef( ref );
-		triangles.mesh.edges().releaseRef( eref1 );
-		triangles.mesh.edges().releaseRef( eref2 );
-		triangles.mesh.edges().releaseRef( eref3 );
-		triangles.mesh.edges().releaseRef( eref4 );
+		mesh.edges().releaseRef( eref1 );
+		mesh.edges().releaseRef( eref2 );
+		mesh.edges().releaseRef( eref3 );
+		mesh.edges().releaseRef( eref4 );
 	}
 
 	private void sortVertices( final Vertex v0, final Vertex v1, final Vertex v2, final RealLocalizable center )
