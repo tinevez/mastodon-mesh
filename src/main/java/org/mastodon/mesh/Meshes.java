@@ -152,4 +152,17 @@ public class Meshes
 	{
 		return RemoveDuplicateVertices.calculate( mesh, precision );
 	}
+
+	public static void scale( final TriMesh mesh, final double[] scales )
+	{
+		for ( final Vertex v : mesh.vertices() )
+		{
+			final double x = v.x();
+			v.setPosition( x * scales[ 0 ], 0 );
+			final double y = v.y();
+			v.setPosition( y * scales[ 1 ], 1 );
+			final double z = v.z();
+			v.setPosition( z * scales[ 2 ], 2 );
+		}
+	}
 }
