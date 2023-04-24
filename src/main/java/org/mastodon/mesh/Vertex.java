@@ -55,10 +55,11 @@ public class Vertex extends AbstractVertex< Vertex, HalfEdge, VertexPool, ByteMa
 	 * @param y
 	 * @param z
 	 */
-	public void init( final double x, final double y, final double z )
+	public Vertex init( final double x, final double y, final double z )
 	{
 		position.setPosition( x, 0 );
 		position.setPosition( y, 1 );
 		position.setPosition( z, 2 );
+		return this;
 	}
 }
