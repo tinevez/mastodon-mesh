@@ -1,6 +1,5 @@
 package org.mastodon.mesh.alg;
 
-import java.util.Iterator;
 import java.util.Vector;
 
 import org.mastodon.collection.IntRefMap;
@@ -13,8 +12,6 @@ import net.imglib2.RealPoint;
 /**
  * Fast quadratic mesh simplification.
  * <p>
- * 
- * 
  * The paper that started this is the seminal article by Garland and Heckbert on
  * <a href="http://www.cs.cmu.edu/~./garland/Papers/quadrics.pdf">quadratic mesh
  * decimation</a> (1995).
@@ -50,6 +47,707 @@ import net.imglib2.RealPoint;
  */
 public class SimplifyMesh
 {
+
+	private final Vector< Triangle > triangles = new Vector<>();
+
+	private final Vector< Vertex > vertices = new Vector<>();
+
+	private final Vector< Ref > refs = new Vector<>();
+
+	private final TriMesh inMesh;
+
+	private final Point p = new Point();
+
+	public SimplifyMesh( final TriMesh mesh )
+	{
+		this.inMesh = mesh;
+	}
+
+	private void readMesh()
+	{
+		vertices.clear();
+		for ( final org.mastodon.mesh.Vertex inV : inMesh.vertices() )
+		{
+			final Point simpleVertex = new Point();
+			simpleVertex.setPosition( inV );
+			final Vertex v = new Vertex( simpleVertex );
+			vertices.add( v );
+		}
+
+		triangles.clear();
+		refs.clear();
+		int triIndex = 0;
+		for ( final org.mastodon.mesh.Triangle tria : inMesh.triangles() )
+		{
+			final Triangle t = new Triangle(
+					tria.v0(),
+					tria.v1(),
+					tria.v2() );
+
+			triangles.add( t );
+
+			refs.add( new Ref( triIndex, t.v[ 0 ] ) );
+			refs.add( new Ref( triIndex, t.v[ 1 ] ) );
+			refs.add( new Ref( triIndex, t.v[ 2 ] ) );
+			triIndex++;
+		}
+	}
+
+	/**
+	 * Begins the simplification process.
+	 *
+	 * @param target_percent
+	 *            the amount in percent to attempt to achieve. For example:
+	 *            0.25f would result in creating a mesh with 25% of triangles
+	 *            contained in the original.
+	 * @param agressiveness
+	 *            sharpness to increase the threshold. 5..8 are good numbers.
+	 *            more iterations yield higher quality. Minimum 4 and maximum 20
+	 *            are recommended.
+	 */
+	public TriMesh simplify( final double target_percent, final double agressiveness )
+	{
+		final int target_count = ( int ) ( inMesh.triangles().size() * target_percent );
+		return simplify( target_count, agressiveness );
+	}
+
+	/**
+	 * Begins the simplification process.
+	 *
+	 * @param target_count
+	 *            the amount of triangles to attempt to achieve.
+	 * @param agressiveness
+	 *            sharpness to increase the threshold. 5..8 are good numbers.
+	 *            more iterations yield higher quality. Minimum 4 and maximum 20
+	 *            are recommended.
+	 */
+	private TriMesh simplify( final int targetCount, final double agressiveness )
+	{
+
+		// init
+
+		// re-read the mesh every time we simplify to start with the original
+		// data.
+		readMesh();
+
+		/*
+		 * System.out.println(String.format("Simplify Target: %d of %d (%d%%)",
+		 * target_count, triangles.size(), target_count * 100 /
+		 * triangles.size()));
+		 * 
+		 * final long timeStart = System.currentTimeMillis();
+		 */
+
+		triangles.forEach( t -> t.deleted = false );
+
+		// main iteration loop
+
+		int deletedTriangles = 0;
+
+		final Vector< Boolean > deleted0 = new Vector<>();
+		final Vector< Boolean > deleted1 = new Vector<>();
+
+		final int triangleCount = triangles.size();
+
+		// final Vector3f p = new Vector3f();
+		p.setPosition( new long[] { 0, 0, 0 } );
+
+		for ( int iteration = 0; iteration < 1000; iteration++ )
+		{
+
+			/*
+			 * System.out.println(String.format(
+			 * "Iteration %02d -> triangles [ deleted: %d : count: %d | removed: %d%% ]"
+			 * , iteration, deleted_triangles, triangle_count -
+			 * deleted_triangles, (deleted_triangles * 100 / triangle_count) ));
+			 */
+
+			// target number of triangles reached ? Then break
+			if ( triangleCount - deletedTriangles <= targetCount )
+				break;
+
+			// update mesh once in a while
+			if ( iteration % 5 == 0 )
+				updateMesh( iteration );
+
+			// clear dirty flag
+			triangles.forEach( t -> t.dirty = false );
+
+			/*
+			 * All triangles with edges below the threshold will be removed.
+			 * 
+			 * The following numbers works well for most models. If it does not,
+			 * try to adjust the 3 parameters.
+			 */
+			final double threshold = 0.000000001d * Math.pow( iteration + 3d, agressiveness );
+
+			// Remove vertices & mark deleted triangles.
+			for ( int i = triangles.size() - 1; i >= 0; i-- )
+			{
+				final Triangle t = triangles.get( i );
+
+				/*
+				 * Don't delete triangle if error nbr 4 is larger than
+				 * threshold, or already deleted, or dirty.
+				 */
+				if ( t.err[ 3 ] > threshold || t.deleted || t.dirty )
+					continue;
+
+				for ( int j = 0; j < 3; j++ )
+				{
+
+					// Don't delete vertex if error larger than threshold.
+					if ( t.err[ j ] >= threshold )
+						continue;
+
+					// Edge indices.
+					final int i0 = t.v[ j ];
+					final int i1 = t.v[ ( j + 1 ) % 3 ];
+
+					// Source and target vertices.
+					final Vertex v0 = vertices.get( i0 );
+					final Vertex v1 = vertices.get( i1 );
+
+					// Don't delete if edge is border edge.
+					if ( v0.border || v1.border )
+						continue;
+
+					// Compute vertex to collapse to
+					p.setPosition( new long[] { 0, 0, 0 } );
+					calculateError( i0, i1, p );
+
+					deleted0.setSize( v0.tcount ); // normals temporarily
+					deleted1.setSize( v1.tcount ); // normals temporarily
+					// deleted0.trimToSize();
+					// deleted1.trimToSize();
+
+					// Don't remove if flipped.
+					if ( flipped( p, i1, v0, deleted0 ) )
+						continue;
+
+					if ( flipped( p, i0, v1, deleted1 ) )
+						continue;
+
+					// Not flipped, so remove edge.
+					v0.p.setPosition( p );
+					v0.q.addLocal( v1.q );
+
+					final int tstart = refs.size();
+
+					deletedTriangles += updateTriangles( i0, v0, deleted0 );
+					deletedTriangles += updateTriangles( i0, v1, deleted1 );
+
+					final int tcount = refs.size() - tstart;
+
+					v0.tstart = tstart;
+					v0.tcount = tcount;
+
+					break;
+				}
+
+				// Done?
+				if ( triangleCount - deletedTriangles <= targetCount )
+					break;
+			}
+		}
+
+		// Clean up mesh.
+		compactMesh();
+
+		// ready
+		/*
+		 * long timeEnd = System.currentTimeMillis();
+		 * 
+		 * System.out.println(String.
+		 * format("Simplify: %d/%d %d%% removed in %d ms", triangle_count -
+		 * deleted_triangles, triangle_count, deleted_triangles * 100 /
+		 * triangle_count, timeEnd-timeStart));
+		 */
+
+		return createSimplifiedMesh();
+	}
+
+	/**
+	 * Checks if a triangle flips when this edge is removed.
+	 * 
+	 * @param p
+	 * @param i1
+	 * @param v0
+	 * @param deleted
+	 * @return
+	 */
+	private boolean flipped( final Point p, final int i1, final Vertex v0, final Vector< Boolean > deleted )
+	{
+		for ( int k = 0; k < v0.tcount; k++ )
+		{
+			final Ref ref = refs.get( v0.tstart + k );
+			final Triangle t = triangles.get( ref.tid );
+
+			if ( t.deleted )
+				continue;
+
+			final int s = ref.tvertex;
+			final int id1 = t.v[ ( s + 1 ) % 3 ];
+			final int id2 = t.v[ ( s + 2 ) % 3 ];
+
+			if ( id1 == i1 || id2 == i1 )
+			{
+				deleted.set( k, true );
+				continue;
+			}
+
+			final Point d1 = vertices.get( id1 ).p.subtract( p ).normalizeLocal();
+			final Point d2 = vertices.get( id2 ).p.subtract( p ).normalizeLocal();
+
+			if ( Math.abs( d1.dot( d2 ) ) > 0.9999d )
+				return true;
+
+			final Point n = new Point( d1 ).crossLocal( d2 ).normalizeLocal();
+
+			deleted.set( k, false );
+
+			if ( n.dot( t.n ) < 0.2d )
+				return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Updates triangle connections and edge error after a edge is collapsed.
+	 * 
+	 * @param i0
+	 * @param v
+	 * @param deleted
+	 * @return
+	 */
+	private int updateTriangles( final int i0, final Vertex v, final Vector< Boolean > deleted )
+	{
+		int trisDeleted = 0;
+		p.setPosition( new long[] { 0, 0, 0 } );
+		for ( int k = 0; k < v.tcount; k++ )
+		{
+			final Ref r = refs.get( v.tstart + k );
+			final Triangle t = triangles.get( r.tid );
+
+			if ( t.deleted )
+				continue;
+
+			if ( deleted.get( k ) )
+			{
+				t.deleted = true;
+				trisDeleted++;
+				continue;
+			}
+
+			t.v[ r.tvertex ] = i0;
+			t.dirty = true;
+			t.err[ 0 ] = calculateError( t.v[ 0 ], t.v[ 1 ], p );
+			t.err[ 1 ] = calculateError( t.v[ 1 ], t.v[ 2 ], p );
+			t.err[ 2 ] = calculateError( t.v[ 2 ], t.v[ 0 ], p );
+			t.err[ 3 ] = Math.min( t.err[ 0 ], Math.min( t.err[ 1 ], t.err[ 2 ] ) );
+
+			refs.add( r );
+		}
+		return trisDeleted;
+	}
+
+	private void updateMesh( final int iteration )
+	{
+
+		if ( iteration > 0 )
+		{ // compact triangles
+			int dst = 0;
+			for ( int i = 0; i < triangles.size(); i++ )
+				if ( !triangles.get( i ).deleted )
+					triangles.set( dst++, triangles.get( i ) );
+
+			triangles.setSize( dst );
+		}
+
+		/*
+		 * Init Quadrics by Plane & Edge Errors
+		 * 
+		 * required at the beginning ( iteration == 0 ) recomputing during the
+		 * simplification is not required, but mostly improves the result for
+		 * closed meshes
+		 */
+		if ( iteration == 0 )
+		{
+			vertices.forEach( v -> v.q.set( new SymmetricMatrix( 0.0d ) ) );
+
+			// for (Triangle t : triangles) {
+			p.setPosition( new long[] { 0, 0, 0 } );
+			triangles.forEach( t -> {
+
+				// Triangle normal.
+				final Point[] tVerticesPos = new Point[] {
+						vertices.get( t.v[ 0 ] ).p,
+						vertices.get( t.v[ 1 ] ).p,
+						vertices.get( t.v[ 2 ] ).p,
+				};
+				final Point n = tVerticesPos[ 1 ].subtract( tVerticesPos[ 0 ] )
+						.crossLocal( tVerticesPos[ 2 ].subtract( tVerticesPos[ 0 ] ) )
+						.normalizeLocal();
+
+				// Store normal.
+				t.n.setPosition( n );
+
+				// Update triangle vertices Qs.
+				final SymmetricMatrix deltaN = new SymmetricMatrix( n.getFloatPosition( 0 ), n.getFloatPosition( 1 ), n.getFloatPosition( 2 ), -n.dot( tVerticesPos[ 0 ] ) );
+				for ( int j = 0; j < 3; j++ )
+				{
+					final Vertex vj = vertices.get( t.v[ j ] );
+					final SymmetricMatrix q = vj.q;
+					q.set( q.add( deltaN ) );
+				}
+
+				// Compute errors.
+				for ( int j = 0; j < 3; j++ )
+					t.err[ j ] = calculateError( t.v[ j ], t.v[ ( j + 1 ) % 3 ], p );
+
+				t.err[ 3 ] = Math.min( t.err[ 0 ], Math.min( t.err[ 1 ], t.err[ 2 ] ) );
+			} );
+		} // End of init.
+
+		// Init Reference ID list
+		vertices.forEach( v -> {
+			v.tstart = 0;
+			v.tcount = 0;
+		} );
+
+		triangles.forEach( t -> {
+			vertices.get( t.v[ 0 ] ).tcount++;
+			vertices.get( t.v[ 1 ] ).tcount++;
+			vertices.get( t.v[ 2 ] ).tcount++;
+		} );
+
+		int tstart = 0;
+		for ( final Vertex v : vertices )
+		{
+			v.tstart = tstart;
+			tstart += v.tcount;
+			v.tcount = 0;
+		}
+
+		// Write References
+		refs.setSize( triangles.size() * 3 );
+		for ( int i = 0; i < triangles.size(); i++ )
+		{
+			final Triangle t = triangles.get( i );
+			for ( int j = 0; j < 3; j++ )
+			{
+				final Vertex v = vertices.get( t.v[ j ] );
+				final int index = v.tstart + v.tcount;
+				final Ref ref = refs.get( index );
+				ref.tid = i;
+				ref.tvertex = j;
+				v.tcount++;
+			}
+		}
+
+		// Identify boundary : vertices[].border=0,1
+		if ( iteration == 0 )
+		{
+			final Vector< Integer > vcount = new Vector<>();
+			final Vector< Integer > vids = new Vector<>();
+
+			vertices.forEach( v -> v.border = false );
+			vertices.forEach( v -> {
+
+				vcount.clear();
+				vids.clear();
+
+				// Iterate over all the triangles of this vertex.
+				for ( int j = 0; j < v.tcount; j++ )
+				{
+					int k = refs.get( v.tstart + j ).tid;
+					final Triangle t = triangles.get( k );
+					for ( k = 0; k < 3; k++ )
+					{
+						int ofs = 0;
+						final int id = t.v[ k ];
+						while ( ofs < vcount.size() )
+						{
+							if ( vids.get( ofs ) == id )
+								break;
+
+							ofs++;
+						}
+
+						if ( ofs == vcount.size() )
+						{
+							vcount.add( 1 );
+							vids.add( id );
+						}
+						else
+						{
+							vcount.set( ofs, vcount.get( ofs ) + 1 );
+						}
+					}
+				}
+
+				for ( int j = 0; j < vcount.size(); j++ )
+					if ( vcount.get( j ) == 1 )
+						vertices.get( vids.get( j ) ).border = true;
+			} );
+		}
+	}
+
+	/**
+	 * Finally compact mesh before exiting.
+	 */
+	private void compactMesh()
+	{
+		int dst = 0;
+		vertices.forEach( v -> v.tcount = 0 );
+		for ( int i = 0; i < triangles.size(); i++ )
+		{
+			if ( !triangles.get( i ).deleted )
+			{
+				final Triangle t = triangles.get( i );
+				triangles.set( dst++, t );
+				for ( int j = 0; j < 3; j++ )
+					vertices.get( t.v[ j ] ).tcount = 1;
+			}
+		}
+
+		triangles.setSize( dst );
+		dst = 0;
+		for ( final Vertex vertice : vertices )
+		{
+			if ( vertice.tcount != 0 )
+			{
+				vertice.tstart = dst;
+				vertices.get( dst ).p.setPosition( vertice.p );
+				dst++;
+			}
+		}
+
+		for ( final Triangle t : triangles )
+			for ( int j = 0; j < 3; j++ )
+				t.v[ j ] = vertices.get( t.v[ j ] ).tstart;
+
+		vertices.setSize( dst );
+	}
+
+	/**
+	 * Error between vertex and Quadric.
+	 * 
+	 * @param q
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
+	private static final double vertexError( final SymmetricMatrix q, final double x, final double y, final double z )
+	{
+		return q.getValue( 0 ) * x * x + 2
+				* q.getValue( 1 ) * x * y + 2
+						* q.getValue( 2 ) * x * z
+				+ 2
+						* q.getValue( 3 ) * x
+				+ q.getValue( 4 ) * y * y + 2
+						* q.getValue( 5 ) * y * z
+				+ 2
+						* q.getValue( 6 ) * y
+				+ q.getValue( 7 ) * z * z + 2
+						* q.getValue( 8 ) * z
+				+ q.getValue( 9 );
+	}
+
+	/**
+	 * Error for one edge.
+	 * 
+	 * @param sourceVid
+	 *            source vertex id of the edge.
+	 * @param targetVid
+	 *            target vertex id of the edge.
+	 * @param result
+	 *            storage for resulting position (modified).
+	 * @return error value.
+	 */
+	private double calculateError( final int sourceVid, final int targetVid, final Point result )
+	{
+		// compute interpolated vertex
+		final Vertex source = vertices.get( sourceVid );
+		final Vertex target = vertices.get( targetVid );
+		final SymmetricMatrix sourceQ = source.q;
+		final SymmetricMatrix targetQ = target.q;
+		final SymmetricMatrix q = sourceQ.add( targetQ );
+		final boolean border = source.border & target.border;
+		final double det = q.det( 0, 1, 2, 1, 4, 5, 2, 5, 7 );
+
+		double error;
+		if ( det != 0 && !border )
+		{
+			// q_delta is invertible
+
+			result.setPosition( ( float ) ( -1 / det * ( q.det( 1, 2, 3, 4, 5, 6, 5, 7, 8 ) ) ), 0 );
+			// vx = A41/det(q_delta)
+
+			result.setPosition( ( float ) ( 1 / det * ( q.det( 0, 2, 3, 1, 5, 6, 2, 7, 8 ) ) ), 1 );
+			// vy = A42/det(q_delta)
+
+			result.setPosition( ( float ) ( -1 / det * ( q.det( 0, 1, 3, 1, 4, 6, 2, 5, 8 ) ) ), 2 );
+			// vz = A43/det(q_delta)
+
+			error = vertexError( q, result.getDoublePosition( 0 ), result.getDoublePosition( 1 ), result.getDoublePosition( 2 ) );
+		}
+		else
+		{
+			// det = 0 -> try to find best result
+			final Point p1 = vertices.get( sourceVid ).p;
+			final Point p2 = vertices.get( targetVid ).p;
+			final Point p3 = p1.add( p2 ).divide( 2.0f ); // (p1+p2)/2;
+			final double error1 = vertexError( q, p1.getDoublePosition( 0 ), p1.getDoublePosition( 1 ), p1.getDoublePosition( 2 ) );
+			final double error2 = vertexError( q, p2.getDoublePosition( 0 ), p2.getDoublePosition( 1 ), p2.getDoublePosition( 2 ) );
+			final double error3 = vertexError( q, p3.getDoublePosition( 0 ), p3.getDoublePosition( 1 ), p3.getDoublePosition( 2 ) );
+
+			error = Math.min( error1, Math.min( error2, error3 ) );
+
+			if ( error1 == error )
+				result.setPosition( p1 );
+			if ( error2 == error )
+				result.setPosition( p2 );
+			if ( error3 == error )
+				result.setPosition( p3 );
+		}
+
+		return error;
+	}
+
+	private TriMesh createSimplifiedMesh()
+	{
+		final Point[] vertArray = new Point[ vertices.size() ];
+
+		for ( int i = 0; i < vertArray.length; i++ )
+		{
+			final Vertex v = vertices.get( i );
+			vertArray[ i ] = v.p;
+		}
+
+//		final List<Integer> indexList = new ArrayList<>();
+//
+//		triangles.forEach(t -> {
+//			indexList.add(t.v[0]);
+//			indexList.add(t.v[1]);
+//			indexList.add(t.v[2]);
+//		});
+
+		final TriMesh mesh = new TriMesh( vertArray.length, triangles.size() );
+
+		final org.mastodon.mesh.Vertex vref0 = mesh.vertexRef();
+		final org.mastodon.mesh.Vertex vref1 = mesh.vertexRef();
+		final org.mastodon.mesh.Vertex vref2 = mesh.vertexRef();
+		final TriangleAdder adder = mesh.triangleAdder();
+		final org.mastodon.mesh.Triangle tref = mesh.triangleRef();
+		final IntRefMap< org.mastodon.mesh.Vertex > map = RefMaps.createIntRefMap( mesh.vertices(), -1, vertArray.length );
+		try
+		{
+			for ( int i = 0; i < vertArray.length; i++ )
+			{
+				final org.mastodon.mesh.Vertex v = mesh.addVertex( vref0 );
+				v.setPosition( vertArray[ i ] );
+				map.put( i, v );
+			}
+
+			for ( final Triangle t : triangles )
+			{
+				final org.mastodon.mesh.Vertex v0 = map.get( t.v[ 0 ], vref0 );
+				final org.mastodon.mesh.Vertex v1 = map.get( t.v[ 1 ], vref1 );
+				final org.mastodon.mesh.Vertex v2 = map.get( t.v[ 2 ], vref2 );
+				adder.add( v0, v1, v2, tref );
+			}
+			return mesh;
+		}
+		finally
+		{
+			mesh.releaseRef( tref );
+			adder.releaseRefs();
+		}
+	}
+
+	private static class Point extends RealPoint
+	{
+
+		private Point()
+		{
+			super( 3 );
+		}
+
+		private Point( final Point d1 )
+		{
+			super( d1 );
+		}
+
+		private Point subtract( final Point p )
+		{
+			final Point res = new Point( this );
+			for ( int i = 0; i < numDimensions(); i++ )
+			{
+				res.setPosition( getDoublePosition( i ) - p.getDoublePosition( i ), i );
+			}
+			return res;
+		}
+
+		private Point normalizeLocal()
+		{
+			double x = getDoublePosition( 0 );
+			double y = getDoublePosition( 1 );
+			double z = getDoublePosition( 2 );
+			double length = x * x + y * y + z * z;
+			if ( length != 1f && length != 0f )
+			{
+				length = 1.0f / Math.sqrt( length );
+				x *= length;
+				y *= length;
+				z *= length;
+			}
+			setPosition( new double[] { x, y, z } );
+			return this;
+		}
+
+		private Point add( final Point p )
+		{
+			final Point res = new Point( this );
+			for ( int i = 0; i < numDimensions(); i++ )
+			{
+				res.setPosition( getDoublePosition( i ) + p.getDoublePosition( i ), i );
+			}
+			return res;
+		}
+
+		private Point divide( final float v )
+		{
+			final Point res = new Point( this );
+			for ( int i = 0; i < numDimensions(); i++ )
+			{
+				res.setPosition( getDoublePosition( i ) / v, i );
+			}
+			return res;
+		}
+
+		double dot( final Point p )
+		{
+			return getDoublePosition( 0 ) * p.getDoublePosition( 0 ) + getDoublePosition( 1 ) * p.getDoublePosition( 1 ) + getDoublePosition( 2 ) * p.getDoublePosition( 2 );
+		}
+
+		private Point crossLocal( final Point p )
+		{
+			final double x = getDoublePosition( 0 );
+			final double y = getDoublePosition( 1 );
+			final double z = getDoublePosition( 2 );
+			final double otherX = p.getDoublePosition( 0 );
+			final double otherY = p.getDoublePosition( 1 );
+			final double otherZ = p.getDoublePosition( 2 );
+			final double tempx = ( y * otherZ ) - ( z * otherY );
+			final double tempy = ( z * otherX ) - ( x * otherZ );
+			setPosition( x * otherY - ( y * otherX ), 2 );
+			setPosition( tempx, 0 );
+			setPosition( tempy, 1 );
+			return this;
+		}
+	}
 
 	private static class SymmetricMatrix
 	{
@@ -139,7 +837,6 @@ public class SimplifyMesh
 			m[ 8 ] += n.getValue( 8 );
 			m[ 9 ] += n.getValue( 9 );
 		}
-
 	}
 
 	private static class Vertex
@@ -174,757 +871,24 @@ public class SimplifyMesh
 
 		private final Point n = new Point();
 
-		Triangle( final int a, final int b, final int c )
+		private Triangle( final int a, final int b, final int c )
 		{
 			this.v[ 0 ] = a;
 			this.v[ 1 ] = b;
 			this.v[ 2 ] = c;
 		}
-
 	}
 
 	private static class Ref
 	{
-
 		private int tid;
 
 		private int tvertex;
 
-		Ref( final int tid, final int tvertex )
+		private Ref( final int tid, final int tvertex )
 		{
 			this.tid = tid;
 			this.tvertex = tvertex;
 		}
-
 	}
-
-	private final Vector< Triangle > triangles = new Vector<>();
-
-	private final Vector< Vertex > vertices = new Vector<>();
-
-	private final Vector< Ref > refs = new Vector<>();
-
-	private final TriMesh inMesh;
-
-	private final Point p = new Point();
-
-	public SimplifyMesh( final TriMesh mesh )
-	{
-		this.inMesh = mesh;
-	}
-
-	private void readMesh()
-	{
-
-		triangles.clear();
-		vertices.clear();
-		refs.clear();
-
-		final Point[] meshVerts = new Point[ inMesh.vertices().size() ];
-		final Iterator< org.mastodon.mesh.Vertex > iterator = inMesh.vertices().iterator();
-		for ( int i = 0; i < inMesh.vertices().size(); i++ )
-		{
-			final Point simpleVertex = new Point();
-			simpleVertex.setPosition( iterator.next() );
-			meshVerts[ i ] = simpleVertex;
-		}
-
-		for ( final Point meshVert : meshVerts )
-		{
-			final Vertex v = new Vertex( meshVert );
-			vertices.add( v );
-		}
-//
-//        int index = 0;
-		int triIndex = 0;
-
-		final Iterator< org.mastodon.mesh.Triangle > iteratorTriangles = inMesh.triangles().iterator();
-		for ( int i = 0; i < inMesh.triangles().size(); i++ )
-		{
-			final org.mastodon.mesh.Triangle tria = iteratorTriangles.next();
-			final Triangle t = new Triangle(
-					tria.v0(),
-					tria.v1(),
-					tria.v2() );
-
-			triangles.add( t );
-
-			refs.add( new Ref( triIndex, t.v[ 0 ] ) );
-			refs.add( new Ref( triIndex, t.v[ 1 ] ) );
-			refs.add( new Ref( triIndex, t.v[ 2 ] ) );
-			triIndex++;
-		}
-	}
-
-	/**
-	 * Begins the simplification process.
-	 *
-	 * @param target_percent
-	 *            the amount in percent to attempt to achieve. For example:
-	 *            0.25f would result in creating a mesh with 25% of triangles
-	 *            contained in the original.
-	 * @param agressiveness
-	 *            sharpness to increase the threshold. 5..8 are good numbers.
-	 *            more iterations yield higher quality. Minimum 4 and maximum 20
-	 *            are recommended.
-	 */
-	public TriMesh simplify( final double target_percent, final double agressiveness )
-	{
-		final int target_count = ( int ) ( inMesh.triangles().size() * target_percent );
-		return simplify( target_count, agressiveness );
-	}
-
-	/**
-	 * Begins the simplification process.
-	 *
-	 * @param target_count
-	 *            the amount of triangles to attempt to achieve.
-	 * @param agressiveness
-	 *            sharpness to increase the threshold. 5..8 are good numbers.
-	 *            more iterations yield higher quality. Minimum 4 and maximum 20
-	 *            are recommended.
-	 */
-	private TriMesh simplify( final int target_count, final double agressiveness )
-	{
-
-		// init
-
-		// re-read the mesh every time we simplify to start with the original
-		// data.
-		readMesh();
-
-		/*
-		 * System.out.println(String.format("Simplify Target: %d of %d (%d%%)",
-		 * target_count, triangles.size(), target_count * 100 /
-		 * triangles.size()));
-		 * 
-		 * final long timeStart = System.currentTimeMillis();
-		 */
-
-		triangles.forEach( t -> t.deleted = false );
-
-		// main iteration loop
-
-		int deleted_triangles = 0;
-
-		final Vector< Boolean > deleted0 = new Vector<>();
-		final Vector< Boolean > deleted1 = new Vector<>();
-
-		final int triangle_count = triangles.size();
-
-		// final Vector3f p = new Vector3f();
-		p.setPosition( new long[] { 0, 0, 0 } );
-
-		for ( int iteration = 0; iteration < 1000; iteration++ )
-		{
-
-			/*
-			 * System.out.println(String.format(
-			 * "Iteration %02d -> triangles [ deleted: %d : count: %d | removed: %d%% ]"
-			 * , iteration, deleted_triangles, triangle_count -
-			 * deleted_triangles, (deleted_triangles * 100 / triangle_count) ));
-			 */
-
-			// target number of triangles reached ? Then break
-			if ( triangle_count - deleted_triangles <= target_count )
-			{
-				break;
-			}
-
-			// update mesh once in a while
-			if ( iteration % 5 == 0 )
-			{
-				update_mesh( iteration );
-			}
-
-			// clear dirty flag
-			triangles.forEach( t -> t.dirty = false );
-
-			//
-			// All triangles with edges below the threshold will be removed
-			//
-			// The following numbers works well for most models.
-			// If it does not, try to adjust the 3 parameters
-			//
-			final double threshold = 0.000000001d * Math.pow( iteration + 3d, agressiveness );
-
-			// remove vertices & mark deleted triangles
-			for ( int i = triangles.size() - 1; i >= 0; i-- )
-			{
-
-				final Triangle t = triangles.get( i );
-
-				if ( t.err[ 3 ] > threshold || t.deleted || t.dirty )
-					continue;
-
-				for ( int j = 0; j < 3; j++ )
-				{
-
-					if ( t.err[ j ] >= threshold )
-					{
-						continue;
-					}
-
-					final int i0 = t.v[ j ];
-					final int i1 = t.v[ ( j + 1 ) % 3 ];
-
-					final Vertex v0 = vertices.get( i0 );
-					final Vertex v1 = vertices.get( i1 );
-
-					// Border check
-					if ( v0.border || v1.border )
-					{
-						continue;
-					}
-
-					// Compute vertex to collapse to
-					// final Vector3f p = new Vector3f();
-					p.setPosition( new long[] { 0, 0, 0 } );
-					calculate_error( i0, i1, p );
-
-					deleted0.setSize( v0.tcount ); // normals temporarily
-					deleted1.setSize( v1.tcount ); // normals temporarily
-					// deleted0.trimToSize();
-					// deleted1.trimToSize();
-
-					// don't remove if flipped
-					if ( flipped( p, i1, v0, deleted0 ) )
-					{
-						continue;
-					}
-
-					if ( flipped( p, i0, v1, deleted1 ) )
-					{
-						continue;
-					}
-
-					// not flipped, so remove edge
-					v0.p.setPosition( p );
-					v0.q.addLocal( v1.q );
-
-					final int tstart = refs.size();
-
-					deleted_triangles += update_triangles( i0, v0, deleted0 );
-					deleted_triangles += update_triangles( i0, v1, deleted1 );
-
-					final int tcount = refs.size() - tstart;
-
-					v0.tstart = tstart;
-					v0.tcount = tcount;
-
-					break;
-				}
-
-				// done?
-				if ( triangle_count - deleted_triangles <= target_count )
-				{
-					break;
-				}
-
-			}
-
-		}
-
-		// clean up mesh
-		compact_mesh();
-
-		// ready
-		/*
-		 * long timeEnd = System.currentTimeMillis();
-		 * 
-		 * System.out.println(String.
-		 * format("Simplify: %d/%d %d%% removed in %d ms", triangle_count -
-		 * deleted_triangles, triangle_count, deleted_triangles * 100 /
-		 * triangle_count, timeEnd-timeStart));
-		 */
-
-		return createSimplifiedMesh();
-	}
-
-	// Check if a triangle flips when this edge is removed
-	private boolean flipped( final Point p, final int i1, final Vertex v0, final Vector< Boolean > deleted )
-	{
-		for ( int k = 0; k < v0.tcount; k++ )
-		{
-			final Ref ref = refs.get( v0.tstart + k );
-			final Triangle t = triangles.get( ref.tid );
-
-			if ( t.deleted )
-				continue;
-
-			final int s = ref.tvertex;
-			final int id1 = t.v[ ( s + 1 ) % 3 ];
-			final int id2 = t.v[ ( s + 2 ) % 3 ];
-
-			if ( id1 == i1 || id2 == i1 )
-			{
-				deleted.set( k, true );
-				continue;
-			}
-
-			final Point d1 = vertices.get( id1 ).p.subtract( p ).normalizeLocal();
-			final Point d2 = vertices.get( id2 ).p.subtract( p ).normalizeLocal();
-
-			if ( Math.abs( d1.dot( d2 ) ) > 0.9999d )
-				return true;
-
-			final Point n = new Point( d1 ).crossLocal( d2 ).normalizeLocal();
-
-			deleted.set( k, false );
-
-			if ( n.dot( t.n ) < 0.2d )
-				return true;
-		}
-
-		return false;
-	}
-
-	// Update triangle connections and edge error after a edge is collapsed
-	private int update_triangles( final int i0, final Vertex v, final Vector< Boolean > deleted )
-	{
-		int tris_deleted = 0;
-
-		p.setPosition( new long[] { 0, 0, 0 } );
-
-		for ( int k = 0; k < v.tcount; k++ )
-		{
-
-			final Ref r = refs.get( v.tstart + k );
-			final Triangle t = triangles.get( r.tid );
-
-			if ( t.deleted )
-				continue;
-
-			if ( deleted.get( k ) )
-			{
-				t.deleted = true;
-				tris_deleted++;
-				continue;
-			}
-
-			t.v[ r.tvertex ] = i0;
-			t.dirty = true;
-			t.err[ 0 ] = calculate_error( t.v[ 0 ], t.v[ 1 ], p );
-			t.err[ 1 ] = calculate_error( t.v[ 1 ], t.v[ 2 ], p );
-			t.err[ 2 ] = calculate_error( t.v[ 2 ], t.v[ 0 ], p );
-			t.err[ 3 ] = Math.min( t.err[ 0 ], Math.min( t.err[ 1 ], t.err[ 2 ] ) );
-
-			refs.add( r );
-		}
-
-		return tris_deleted;
-	}
-
-	private void update_mesh( final int iteration )
-	{
-
-		if ( iteration > 0 )
-		{ // compact triangles
-
-			int dst = 0;
-
-			for ( int i = 0; i < triangles.size(); i++ )
-			{
-				if ( !triangles.get( i ).deleted )
-				{
-					triangles.set( dst++, triangles.get( i ) );
-				}
-			}
-
-			triangles.setSize( dst );
-		}
-
-		//
-		// Init Quadrics by Plane & Edge Errors
-		//
-		// required at the beginning ( iteration == 0 )
-		// recomputing during the simplification is not required,
-		// but mostly improves the result for closed meshes
-		//
-		if ( iteration == 0 )
-		{
-			vertices.forEach( v -> v.q.set( new SymmetricMatrix( 0.0d ) ) );
-
-			// for (Triangle t : triangles) {
-			triangles.forEach( t -> {
-
-				final Point[] p = new Point[] {
-						vertices.get( t.v[ 0 ] ).p,
-						vertices.get( t.v[ 1 ] ).p,
-						vertices.get( t.v[ 2 ] ).p,
-				};
-
-				final Point n = p[ 1 ].subtract( p[ 0 ] )
-						.crossLocal( p[ 2 ].subtract( p[ 0 ] ) )
-						.normalizeLocal();
-
-				t.n.setPosition( n );
-
-				for ( int j = 0; j < 3; j++ )
-				{
-					vertices.get( t.v[ j ] ).q.set(
-							vertices.get( t.v[ j ] ).q.add( new SymmetricMatrix( n.getFloatPosition( 0 ), n.getFloatPosition( 1 ), n.getFloatPosition( 2 ), -n.dot( p[ 0 ] ) ) ) );
-				}
-
-			} );
-
-			// final Vector3f p = new Vector3f();
-			p.setPosition( new long[] { 0, 0, 0 } );
-
-			triangles.forEach( t -> {
-
-				for ( int j = 0; j < 3; j++ )
-				{
-					t.err[ j ] = calculate_error( t.v[ j ], t.v[ ( j + 1 ) % 3 ], p );
-				}
-
-				t.err[ 3 ] = Math.min( t.err[ 0 ], Math.min( t.err[ 1 ], t.err[ 2 ] ) );
-
-			} );
-
-		}
-
-		// Init Reference ID list
-		vertices.forEach( v -> {
-			v.tstart = 0;
-			v.tcount = 0;
-		} );
-
-		triangles.forEach( t -> {
-			vertices.get( t.v[ 0 ] ).tcount++;
-			vertices.get( t.v[ 1 ] ).tcount++;
-			vertices.get( t.v[ 2 ] ).tcount++;
-		} );
-
-		int tstart = 0;
-
-		for ( final Vertex v : vertices )
-		{
-			v.tstart = tstart;
-			tstart += v.tcount;
-			v.tcount = 0;
-		}
-
-		// Write References
-		refs.setSize( triangles.size() * 3 );
-
-		for ( int i = 0; i < triangles.size(); i++ )
-		{
-
-			final Triangle t = triangles.get( i );
-
-			for ( int j = 0; j < 3; j++ )
-			{
-				final Vertex v = vertices.get( t.v[ j ] );
-				refs.get( v.tstart + v.tcount ).tid = i;
-				refs.get( v.tstart + v.tcount ).tvertex = j;
-				v.tcount++;
-			}
-		}
-
-		// Identify boundary : vertices[].border=0,1
-		if ( iteration == 0 )
-		{
-			final Vector< Integer > vcount = new Vector<>();
-			final Vector< Integer > vids = new Vector<>();
-
-			vertices.forEach( v -> v.border = false );
-
-			vertices.forEach( v -> {
-
-				vcount.clear();
-				vids.clear();
-
-				for ( int j = 0; j < v.tcount; j++ )
-				{
-
-					int k = refs.get( v.tstart + j ).tid;
-
-					final Triangle t = triangles.get( k );
-
-					for ( k = 0; k < 3; k++ )
-					{
-
-						int ofs = 0;
-
-						final int id = t.v[ k ];
-
-						while ( ofs < vcount.size() )
-						{
-							if ( vids.get( ofs ) == id )
-							{
-								break;
-							}
-
-							ofs++;
-						}
-
-						if ( ofs == vcount.size() )
-						{
-							vcount.add( 1 );
-							vids.add( id );
-						}
-						else
-						{
-							vcount.set( ofs, vcount.get( ofs ) + 1 );
-						}
-					}
-				}
-
-				for ( int j = 0; j < vcount.size(); j++ )
-				{
-					if ( vcount.get( j ) == 1 )
-					{
-						vertices.get( vids.get( j ) ).border = true;
-					}
-				}
-
-			} );
-		}
-	}
-
-	// Finally compact mesh before exiting
-	private void compact_mesh()
-	{
-		int dst = 0;
-
-		vertices.forEach( v -> v.tcount = 0 );
-
-		for ( int i = 0; i < triangles.size(); i++ )
-		{
-			if ( !triangles.get( i ).deleted )
-			{
-				final Triangle t = triangles.get( i );
-
-				triangles.set( dst++, t );
-
-				for ( int j = 0; j < 3; j++ )
-				{
-					vertices.get( t.v[ j ] ).tcount = 1;
-				}
-			}
-		}
-
-		triangles.setSize( dst );
-
-		dst = 0;
-
-		for ( final Vertex vertice : vertices )
-		{
-			if ( vertice.tcount != 0 )
-			{
-				vertice.tstart = dst;
-				vertices.get( dst ).p.setPosition( vertice.p );
-				dst++;
-			}
-		}
-
-		for ( final Triangle t : triangles )
-		{
-			for ( int j = 0; j < 3; j++ )
-			{
-				t.v[ j ] = vertices.get( t.v[ j ] ).tstart;
-			}
-		}
-
-		vertices.setSize( dst );
-	}
-
-	// Error between vertex and Quadric
-	private double vertex_error( final SymmetricMatrix q, final double x, final double y, final double z )
-	{
-		return q.getValue( 0 ) * x * x + 2
-				* q.getValue( 1 ) * x * y + 2
-						* q.getValue( 2 ) * x * z
-				+ 2
-						* q.getValue( 3 ) * x
-				+ q.getValue( 4 ) * y * y + 2
-						* q.getValue( 5 ) * y * z
-				+ 2
-						* q.getValue( 6 ) * y
-				+ q.getValue( 7 ) * z * z + 2
-						* q.getValue( 8 ) * z
-				+ q.getValue( 9 );
-	}
-
-	// Error for one edge
-	private double calculate_error( final int id_v1, final int id_v2, final Point p_result )
-	{
-
-		// compute interpolated vertex
-		final SymmetricMatrix q = vertices.get( id_v1 ).q.add( vertices.get( id_v2 ).q );
-		final boolean border = vertices.get( id_v1 ).border & vertices.get( id_v2 ).border;
-		double error;
-		final double det = q.det( 0, 1, 2, 1, 4, 5, 2, 5, 7 );
-
-		if ( det != 0 && !border )
-		{
-			// q_delta is invertible
-			p_result.setPosition( ( float ) ( -1 / det * ( q.det( 1, 2, 3, 4, 5, 6, 5, 7, 8 ) ) ), 0 ); // vx
-																										// =
-																										// A41/det(q_delta)
-			p_result.setPosition( ( float ) ( 1 / det * ( q.det( 0, 2, 3, 1, 5, 6, 2, 7, 8 ) ) ), 1 ); // vy
-																										// =
-																										// A42/det(q_delta)
-			p_result.setPosition( ( float ) ( -1 / det * ( q.det( 0, 1, 3, 1, 4, 6, 2, 5, 8 ) ) ), 2 ); // vz
-																										// =
-																										// A43/det(q_delta)
-			error = vertex_error( q, p_result.getFloatPosition( 0 ), p_result.getFloatPosition( 1 ), p_result.getFloatPosition( 2 ) );
-		}
-		else
-		{
-			// det = 0 -> try to find best result
-			final Point p1 = vertices.get( id_v1 ).p;
-			final Point p2 = vertices.get( id_v2 ).p;
-			final Point p3 = p1.add( p2 ).divide( 2.0f ); // (p1+p2)/2;
-			final double error1 = vertex_error( q, p1.getFloatPosition( 0 ), p1.getFloatPosition( 1 ), p1.getFloatPosition( 2 ) );
-			final double error2 = vertex_error( q, p2.getFloatPosition( 0 ), p2.getFloatPosition( 1 ), p2.getFloatPosition( 2 ) );
-			final double error3 = vertex_error( q, p3.getFloatPosition( 0 ), p3.getFloatPosition( 1 ), p3.getFloatPosition( 2 ) );
-
-			error = Math.min( error1, Math.min( error2, error3 ) );
-
-			if ( error1 == error )
-				p_result.setPosition( p1 );
-			if ( error2 == error )
-				p_result.setPosition( p2 );
-			if ( error3 == error )
-				p_result.setPosition( p3 );
-		}
-
-		return error;
-	}
-
-	private TriMesh createSimplifiedMesh()
-	{
-		final Point[] vertArray = new Point[ vertices.size() ];
-
-		for ( int i = 0; i < vertArray.length; i++ )
-		{
-			final Vertex v = vertices.get( i );
-			vertArray[ i ] = v.p;
-		}
-
-//		final List<Integer> indexList = new ArrayList<>();
-//
-//		triangles.forEach(t -> {
-//			indexList.add(t.v[0]);
-//			indexList.add(t.v[1]);
-//			indexList.add(t.v[2]);
-//		});
-
-		final TriMesh mesh = new TriMesh( vertArray.length, triangles.size() );
-
-		final org.mastodon.mesh.Vertex vref0 = mesh.vertexRef();
-		final org.mastodon.mesh.Vertex vref1 = mesh.vertexRef();
-		final org.mastodon.mesh.Vertex vref2 = mesh.vertexRef();
-		final TriangleAdder adder = mesh.triangleAdder();
-		final org.mastodon.mesh.Triangle tref = mesh.triangleRef();
-		final IntRefMap< org.mastodon.mesh.Vertex > map = RefMaps.createIntRefMap( mesh.vertices(), -1, vertArray.length );
-		try
-		{
-			for ( int i = 0; i < vertArray.length; i++ )
-			{
-				final org.mastodon.mesh.Vertex v = mesh.addVertex( vref0 );
-				v.setPosition( vertArray[ i ] );
-				map.put( i, v );
-			}
-
-			for ( final Triangle t : triangles )
-			{
-				final org.mastodon.mesh.Vertex v0 = map.get( t.v[ 0 ], vref0 );
-				final org.mastodon.mesh.Vertex v1 = map.get( t.v[ 1 ], vref1 );
-				final org.mastodon.mesh.Vertex v2 = map.get( t.v[ 2 ], vref2 );
-				adder.add( v0, v1, v2, tref );
-			}
-			return mesh;
-		}
-		finally
-		{
-			mesh.releaseRef( tref );
-			adder.releaseRefs();
-		}
-	}
-
-	private static class Point extends RealPoint
-	{
-
-		Point()
-		{
-			super( 3 );
-		}
-
-		Point( final Point d1 )
-		{
-			super( d1 );
-		}
-
-		Point subtract( final Point p )
-		{
-			final Point res = new Point( this );
-			for ( int i = 0; i < numDimensions(); i++ )
-			{
-				res.setPosition( getDoublePosition( i ) - p.getDoublePosition( i ), i );
-			}
-			return res;
-		}
-
-		Point normalizeLocal()
-		{
-			double x = getDoublePosition( 0 );
-			double y = getDoublePosition( 1 );
-			double z = getDoublePosition( 2 );
-			double length = x * x + y * y + z * z;
-			if ( length != 1f && length != 0f )
-			{
-				length = 1.0f / Math.sqrt( length );
-				x *= length;
-				y *= length;
-				z *= length;
-			}
-			setPosition( new double[] { x, y, z } );
-			return this;
-		}
-
-		Point add( final Point p )
-		{
-			final Point res = new Point( this );
-			for ( int i = 0; i < numDimensions(); i++ )
-			{
-				res.setPosition( getDoublePosition( i ) + p.getDoublePosition( i ), i );
-			}
-			return res;
-		}
-
-		Point divide( final float v )
-		{
-			final Point res = new Point( this );
-			for ( int i = 0; i < numDimensions(); i++ )
-			{
-				res.setPosition( getDoublePosition( i ) / v, i );
-			}
-			return res;
-		}
-
-		double dot( final Point p )
-		{
-			return getDoublePosition( 0 ) * p.getDoublePosition( 0 ) + getDoublePosition( 1 ) * p.getDoublePosition( 1 ) + getDoublePosition( 2 ) * p.getDoublePosition( 2 );
-		}
-
-		Point crossLocal( final Point p )
-		{
-			final double x = getDoublePosition( 0 );
-			final double y = getDoublePosition( 1 );
-			final double z = getDoublePosition( 2 );
-			final double otherX = p.getDoublePosition( 0 );
-			final double otherY = p.getDoublePosition( 1 );
-			final double otherZ = p.getDoublePosition( 2 );
-			final double tempx = ( y * otherZ ) - ( z * otherY );
-			final double tempy = ( z * otherX ) - ( x * otherZ );
-			setPosition( x * otherY - ( y * otherX ), 2 );
-			setPosition( tempx, 0 );
-			setPosition( tempy, 1 );
-			return this;
-		}
-	}
-
 }
