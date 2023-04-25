@@ -12,6 +12,9 @@ import org.mastodon.mesh.alg.MeshConnectedComponents;
 import org.mastodon.mesh.alg.RemoveDuplicateVertices;
 import org.mastodon.mesh.alg.SimplifyMesh;
 import org.mastodon.mesh.alg.TwoManifold;
+import org.mastodon.mesh.obj.core.TriMesh;
+import org.mastodon.mesh.obj.core.Triangle;
+import org.mastodon.mesh.obj.core.Vertex;
 
 import net.imagej.mesh.Mesh;
 import net.imglib2.FinalRealInterval;
@@ -29,11 +32,11 @@ import net.imglib2.type.numeric.RealType;
 public class Meshes
 {
 
-	public static FinalRealInterval boundingBox( final TriMesh mesh )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > FinalRealInterval boundingBox( final TriMeshI< V, E, T > mesh )
 	{
 		final double[] min = new double[] { Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY };
 		final double[] max = new double[] { Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
-		for ( final Vertex v : mesh.vertices() )
+		for ( final V v : mesh.vertices() )
 		{
 			final double x = v.getDoublePosition( 0 );
 			final double y = v.getDoublePosition( 1 );
@@ -52,7 +55,6 @@ public class Meshes
 				max[ 5 ] = z;
 		}
 		return new FinalRealInterval( min, max );
-
 	}
 
 	/**
@@ -80,7 +82,7 @@ public class Meshes
 		mesh.releaseRef( vref );
 
 		// Add triangles and half-edges.
-		final TriangleAdder adder = mesh.triangleAdder();
+		final TriangleAdderI< Triangle, Vertex > adder = mesh.triangleAdder();
 		final Triangle tref = mesh.triangleRef();
 		final Vertex vref0 = mesh.vertexRef();
 		final Vertex vref1 = mesh.vertexRef();
@@ -101,10 +103,10 @@ public class Meshes
 		return mesh;
 	}
 
-	public static RealPoint center( final TriMesh mesh )
+	public static < V extends VertexI< ? > > RealPoint center( final TriMeshI< V, ?, ? > mesh )
 	{
 		final RealPoint p = new RealPoint( 0, 0, 0 );
-		for ( final Vertex v : mesh.vertices() )
+		for ( final V v : mesh.vertices() )
 			p.move( v );
 
 		final int nVertices = mesh.vertices().size();
@@ -156,14 +158,14 @@ public class Meshes
 	 * @return new mesh without duplicate vertices. The result will not include
 	 *         normals or uv coordinates.
 	 */
-	public static TriMesh removeDuplicateVertices( final TriMesh mesh, final int precision )
+	public static < V extends VertexI< ? >, T extends TriangleI< V > > TriMesh removeDuplicateVertices( final TriMeshI< V, ?, T > mesh, final int precision )
 	{
 		return RemoveDuplicateVertices.calculate( mesh, precision );
 	}
 
-	public static void scale( final TriMesh mesh, final double[] scales )
+	public static < V extends VertexI< ? > > void scale( final TriMeshI< V, ?, ? > mesh, final double[] scales )
 	{
-		for ( final Vertex v : mesh.vertices() )
+		for ( final V v : mesh.vertices() )
 		{
 			final double x = v.x();
 			v.setPosition( x * scales[ 0 ], 0 );
@@ -181,15 +183,15 @@ public class Meshes
 	 *            the collection of triangles.
 	 * @return a new {@link RefSet}.
 	 */
-	public static final RefSet< Vertex > verticesOf( final Iterable< Triangle > triangles, final TriMesh mesh )
+	public static final < V extends VertexI< ? >, T extends TriangleI< V > > RefSet< V > verticesOf( final Iterable< T > triangles, final TriMeshI< V, ?, T > mesh )
 	{
-		final RefSet< Vertex > vertices = RefCollections.createRefSet( mesh.vertices() );
-		final Vertex v0 = mesh.vertexRef();
-		final Vertex v1 = mesh.vertexRef();
-		final Vertex v2 = mesh.vertexRef();
+		final RefSet< V > vertices = RefCollections.createRefSet( mesh.vertices() );
+		final V v0 = mesh.vertexRef();
+		final V v1 = mesh.vertexRef();
+		final V v2 = mesh.vertexRef();
 		try
 		{
-			for ( final Triangle t : triangles )
+			for ( final T t : triangles )
 			{
 				vertices.add( t.getVertex0( v0 ) );
 				vertices.add( t.getVertex1( v1 ) );
@@ -212,7 +214,7 @@ public class Meshes
 	 *            the mesh.
 	 * @return the number of connected components.
 	 */
-	public static int nConnectedComponents( final TriMesh mesh )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, ? > > int nConnectedComponents( final TriMeshI< V, E, ? > mesh )
 	{
 		return MeshConnectedComponents.n( mesh );
 	}
@@ -228,7 +230,7 @@ public class Meshes
 	 *            the mesh to split.
 	 * @return a new iterator over its connected components as new meshes.
 	 */
-	public static final Iterator< TriMesh > iterator( final TriMesh mesh )
+	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > Iterator< TriMesh > iterator( final TriMeshI< V, E, T > mesh )
 	{
 		return MeshConnectedComponents.iterator( mesh );
 	}
@@ -244,7 +246,7 @@ public class Meshes
 	 *            the mesh to split.
 	 * @return a new iterable over its connected components as new meshes.
 	 */
-	public static final Iterable< TriMesh > iterable( final TriMesh mesh )
+	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > Iterable< TriMesh > iterable( final TriMeshI< V, E, T > mesh )
 	{
 		return MeshConnectedComponents.iterable( mesh );
 	}
@@ -259,7 +261,7 @@ public class Meshes
 	 *            the mesh to inspect.
 	 * @return <code>true</code> if it is two-manifold.
 	 */
-	public static boolean isTwoManifold( final TriMesh mesh )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > boolean isTwoManifold( final TriMeshI< V, E, T > mesh )
 	{
 		return TwoManifold.isTwoManifold( mesh );
 	}
@@ -281,8 +283,8 @@ public class Meshes
 	 * @return the simplified mesh The result will not include normals or uv
 	 *         coordinates.
 	 */
-	public static TriMesh simplify( final TriMesh mesh, final double target_percent, final double agressiveness )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > TriMesh simplify( final TriMeshI< V, E, T > mesh, final double target_percent, final double agressiveness )
 	{
-		return new SimplifyMesh( mesh ).simplify( target_percent, agressiveness );
+		return new SimplifyMesh< V, E, T >( mesh ).simplify( target_percent, agressiveness );
 	}
 }

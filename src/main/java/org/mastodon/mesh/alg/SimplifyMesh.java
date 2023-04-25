@@ -4,8 +4,12 @@ import java.util.Vector;
 
 import org.mastodon.collection.IntRefMap;
 import org.mastodon.collection.RefMaps;
-import org.mastodon.mesh.TriMesh;
-import org.mastodon.mesh.TriangleAdder;
+import org.mastodon.mesh.HalfEdgeI;
+import org.mastodon.mesh.TriMeshI;
+import org.mastodon.mesh.TriangleAdderI;
+import org.mastodon.mesh.TriangleI;
+import org.mastodon.mesh.VertexI;
+import org.mastodon.mesh.obj.core.TriMesh;
 
 import net.imglib2.RealPoint;
 
@@ -45,7 +49,7 @@ import net.imglib2.RealPoint;
  * @author Deborah Schmidt / frauzufall
  * @author Jean-Yves Tinevez
  */
-public class SimplifyMesh
+public class SimplifyMesh< V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > >
 {
 
 	private final Vector< Triangle > triangles = new Vector<>();
@@ -54,11 +58,11 @@ public class SimplifyMesh
 
 	private final Vector< Ref > refs = new Vector<>();
 
-	private final TriMesh inMesh;
+	private final TriMeshI< V, E, T > inMesh;
 
 	private final Point p = new Point();
 
-	public SimplifyMesh( final TriMesh mesh )
+	public SimplifyMesh( final TriMeshI< V, E, T > mesh )
 	{
 		this.inMesh = mesh;
 	}
@@ -66,7 +70,7 @@ public class SimplifyMesh
 	private void readMesh()
 	{
 		vertices.clear();
-		for ( final org.mastodon.mesh.Vertex inV : inMesh.vertices() )
+		for ( final V inV : inMesh.vertices() )
 		{
 			final Point simpleVertex = new Point();
 			simpleVertex.setPosition( inV );
@@ -77,7 +81,7 @@ public class SimplifyMesh
 		triangles.clear();
 		refs.clear();
 		int triIndex = 0;
-		for ( final org.mastodon.mesh.Triangle tria : inMesh.triangles() )
+		for ( final T tria : inMesh.triangles() )
 		{
 			final Triangle t = new Triangle(
 					tria.v0(),
@@ -636,26 +640,26 @@ public class SimplifyMesh
 
 		final TriMesh mesh = new TriMesh( vertArray.length, triangles.size() );
 
-		final org.mastodon.mesh.Vertex vref0 = mesh.vertexRef();
-		final org.mastodon.mesh.Vertex vref1 = mesh.vertexRef();
-		final org.mastodon.mesh.Vertex vref2 = mesh.vertexRef();
-		final TriangleAdder adder = mesh.triangleAdder();
-		final org.mastodon.mesh.Triangle tref = mesh.triangleRef();
-		final IntRefMap< org.mastodon.mesh.Vertex > map = RefMaps.createIntRefMap( mesh.vertices(), -1, vertArray.length );
+		final org.mastodon.mesh.obj.core.Vertex vref0 = mesh.vertexRef();
+		final org.mastodon.mesh.obj.core.Vertex vref1 = mesh.vertexRef();
+		final org.mastodon.mesh.obj.core.Vertex vref2 = mesh.vertexRef();
+		final TriangleAdderI< org.mastodon.mesh.obj.core.Triangle, org.mastodon.mesh.obj.core.Vertex > adder = mesh.triangleAdder();
+		final org.mastodon.mesh.obj.core.Triangle tref = mesh.triangleRef();
+		final IntRefMap< org.mastodon.mesh.obj.core.Vertex > map = RefMaps.createIntRefMap( mesh.vertices(), -1, vertArray.length );
 		try
 		{
 			for ( int i = 0; i < vertArray.length; i++ )
 			{
-				final org.mastodon.mesh.Vertex v = mesh.addVertex( vref0 );
+				final org.mastodon.mesh.obj.core.Vertex v = mesh.addVertex( vref0 );
 				v.setPosition( vertArray[ i ] );
 				map.put( i, v );
 			}
 
 			for ( final Triangle t : triangles )
 			{
-				final org.mastodon.mesh.Vertex v0 = map.get( t.v[ 0 ], vref0 );
-				final org.mastodon.mesh.Vertex v1 = map.get( t.v[ 1 ], vref1 );
-				final org.mastodon.mesh.Vertex v2 = map.get( t.v[ 2 ], vref2 );
+				final org.mastodon.mesh.obj.core.Vertex v0 = map.get( t.v[ 0 ], vref0 );
+				final org.mastodon.mesh.obj.core.Vertex v1 = map.get( t.v[ 1 ], vref1 );
+				final org.mastodon.mesh.obj.core.Vertex v2 = map.get( t.v[ 2 ], vref2 );
 				adder.add( v0, v1, v2, tref );
 			}
 			return mesh;

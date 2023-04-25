@@ -1,9 +1,9 @@
 package org.mastodon.mesh.alg;
 
-import org.mastodon.mesh.HalfEdge;
-import org.mastodon.mesh.TriMesh;
-import org.mastodon.mesh.Triangle;
-import org.mastodon.mesh.Vertex;
+import org.mastodon.mesh.HalfEdgeI;
+import org.mastodon.mesh.TriMeshI;
+import org.mastodon.mesh.TriangleI;
+import org.mastodon.mesh.VertexI;
 
 public class TwoManifold
 {
@@ -18,37 +18,37 @@ public class TwoManifold
 	 *            the mesh to inspect.
 	 * @return <code>true</code> if it is two-manifold.
 	 */
-	public static boolean isTwoManifold( final TriMesh mesh )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > boolean isTwoManifold( final TriMeshI< V, E, T > mesh )
 	{
-		final Vertex vref0 = mesh.vertexRef();
-		final Vertex vref1 = mesh.vertexRef();
-		final Vertex vref2 = mesh.vertexRef();
-		final HalfEdge eref = mesh.edgeRef();
-		final Triangle tref1 = mesh.triangleRef();
-		final Triangle tref2 = mesh.triangleRef();
+		final V vref0 = mesh.vertexRef();
+		final V vref1 = mesh.vertexRef();
+		final V vref2 = mesh.vertexRef();
+		final E eref = mesh.edgeRef();
+		final T tref1 = mesh.triangleRef();
+		final T tref2 = mesh.triangleRef();
 
 		try
 		{
-			for ( final HalfEdge edge : mesh.edges() )
+			for ( final E edge : mesh.edges() )
 			{
 				// More than two edges between the two vertices?
-				final Vertex source = edge.getSource( vref0 );
-				final Vertex target = edge.getTarget( vref1 );
+				final V source = edge.getSource( vref0 );
+				final V target = edge.getTarget( vref1 );
 				if ( mesh.getEdges( source, target, vref2 ).size() != 1 )
 					return false;
 				if ( mesh.getEdges( target, source, vref2 ).size() != 1 )
 					return false;
 
 				// Has one face.
-				final Triangle triangle = edge.triangle( tref1 );
+				final T triangle = edge.triangle( tref1 );
 				if ( null == triangle )
 					return false;
 
 				// Twin has another face.
-				final HalfEdge twin = edge.twin( eref );
+				final E twin = edge.twin( eref );
 				if ( twin == null )
 					return false;
-				final Triangle twinTriangle = twin.triangle( tref2 );
+				final T twinTriangle = twin.triangle( tref2 );
 				if ( twinTriangle == null || triangle.equals( twinTriangle ) )
 					return false;
 			}

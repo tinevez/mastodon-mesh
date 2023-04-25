@@ -15,10 +15,10 @@ import java.util.List;
 import org.mastodon.collection.IntRefMap;
 import org.mastodon.collection.RefIntMap;
 import org.mastodon.collection.RefMaps;
-import org.mastodon.mesh.TriMesh;
-import org.mastodon.mesh.Triangle;
-import org.mastodon.mesh.TriangleAdder;
-import org.mastodon.mesh.Vertex;
+import org.mastodon.mesh.TriangleAdderI;
+import org.mastodon.mesh.obj.core.TriMesh;
+import org.mastodon.mesh.obj.core.Triangle;
+import org.mastodon.mesh.obj.core.Vertex;
 import org.scijava.util.FileUtils;
 import org.smurn.jply.Element;
 import org.smurn.jply.ElementReader;
@@ -137,7 +137,7 @@ public class PLYMeshIO
 			throw new IOException( "Could not find the 'face' element in file." );
 
 		// Add triangles to the mesh.
-		final TriangleAdder adder = mesh.triangleAdder();
+		final TriangleAdderI< Triangle, Vertex > adder = mesh.triangleAdder();
 		final Triangle tref = mesh.triangleRef();
 		final Vertex vref0 = mesh.vertexRef();
 		final Vertex vref1 = mesh.vertexRef();

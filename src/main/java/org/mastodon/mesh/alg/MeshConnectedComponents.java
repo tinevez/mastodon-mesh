@@ -8,12 +8,15 @@ import org.mastodon.collection.RefDeque;
 import org.mastodon.collection.RefMaps;
 import org.mastodon.collection.RefSet;
 import org.mastodon.graph.algorithm.util.Graphs;
-import org.mastodon.mesh.HalfEdge;
+import org.mastodon.mesh.HalfEdgeI;
 import org.mastodon.mesh.Meshes;
-import org.mastodon.mesh.TriMesh;
-import org.mastodon.mesh.Triangle;
-import org.mastodon.mesh.TriangleAdder;
-import org.mastodon.mesh.Vertex;
+import org.mastodon.mesh.TriMeshI;
+import org.mastodon.mesh.TriangleAdderI;
+import org.mastodon.mesh.TriangleI;
+import org.mastodon.mesh.VertexI;
+import org.mastodon.mesh.obj.core.TriMesh;
+import org.mastodon.mesh.obj.core.Triangle;
+import org.mastodon.mesh.obj.core.Vertex;
 
 public class MeshConnectedComponents
 {
@@ -25,22 +28,22 @@ public class MeshConnectedComponents
 	 *            the mesh.
 	 * @return the number of connected components.
 	 */
-	public static int n( final TriMesh mesh )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, ? > > int n( final TriMeshI< V, E, ? > mesh )
 	{
 		// Simple version that does not keep CCs in memory.
-		final Vertex vref0 = mesh.vertexRef();
-		final Vertex vref1 = mesh.vertexRef();
+		final V vref0 = mesh.vertexRef();
+		final V vref1 = mesh.vertexRef();
 		try
 		{
 			int nCC = 0;
-			final RefSet< Vertex > visited = RefCollections.createRefSet( mesh.vertices() );
-			final RefDeque< Vertex > queue = RefCollections.createRefDeque( mesh.vertices() );
+			final RefSet< V > visited = RefCollections.createRefSet( mesh.vertices() );
+			final RefDeque< V > queue = RefCollections.createRefDeque( mesh.vertices() );
 
-			final Iterator< Vertex > it = mesh.vertices().iterator();
+			final Iterator< V > it = mesh.vertices().iterator();
 			while ( it.hasNext() )
 			{
 				// Get a starting point that was never visited.
-				final Vertex start = it.next();
+				final V start = it.next();
 				if ( visited.contains( start ) )
 					continue;
 
@@ -50,14 +53,14 @@ public class MeshConnectedComponents
 				queue.add( start );
 				while ( !queue.isEmpty() )
 				{
-					final Vertex v = queue.pop( vref1 );
+					final V v = queue.pop( vref1 );
 					if ( visited.contains( v ) )
 						continue;
 
 					visited.add( v );
-					for ( final HalfEdge e : v.edges() )
+					for ( final E e : v.edges() )
 					{
-						final Vertex o = Graphs.getOppositeVertex( e, v, vref1 );
+						final V o = Graphs.getOppositeVertex( e, v, vref1 );
 						if ( !visited.contains( o ) )
 							queue.add( o );
 					}
@@ -83,9 +86,9 @@ public class MeshConnectedComponents
 	 *            the mesh to split.
 	 * @return a new iterator over its connected components as new meshes.
 	 */
-	public static final Iterator< TriMesh > iterator( final TriMesh mesh )
+	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > Iterator< TriMesh > iterator( final TriMeshI< V, E, T > mesh )
 	{
-		return new MyCCIterator( mesh );
+		return new MyCCIterator< V, E, T >( mesh );
 	}
 
 	/**
@@ -99,7 +102,7 @@ public class MeshConnectedComponents
 	 *            the mesh to split.
 	 * @return a new iterable over its connected components as new meshes.
 	 */
-	public static final Iterable< TriMesh > iterable( final TriMesh mesh )
+	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > Iterable< TriMesh > iterable( final TriMeshI< V, E, T > mesh )
 	{
 		return new Iterable< TriMesh >()
 		{
@@ -107,23 +110,23 @@ public class MeshConnectedComponents
 			@Override
 			public Iterator< TriMesh > iterator()
 			{
-				return new MyCCIterator( mesh );
+				return new MyCCIterator< V, E, T >( mesh );
 			}
 		};
 	}
 
-	private static final class MyCCIterator implements Iterator< TriMesh >
+	private static final class MyCCIterator< V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > implements Iterator< TriMesh >
 	{
 
-		private final TriMesh mesh;
+		private final TriMeshI< V, E, T > mesh;
 
-		private final RefSet< Vertex > visited;
+		private final RefSet< V > visited;
 
-		private final Iterator< Vertex > it;
+		private final Iterator< V > it;
 
 		private TriMesh next;
 
-		private MyCCIterator( final TriMesh mesh )
+		private MyCCIterator( final TriMeshI< V, E, T > mesh )
 		{
 			this.mesh = mesh;
 			this.visited = RefCollections.createRefSet( mesh.vertices() );
@@ -148,17 +151,17 @@ public class MeshConnectedComponents
 		private TriMesh prefetch()
 		{
 			// Build the next connected component.
-			final Vertex vref0 = mesh.vertexRef();
-			final Vertex vref1 = mesh.vertexRef();
-			final Triangle tref = mesh.triangleRef();
+			final V vref0 = mesh.vertexRef();
+			final V vref1 = mesh.vertexRef();
+			final T tref = mesh.triangleRef();
 			try
 			{
-				final RefDeque< Vertex > queue = RefCollections.createRefDeque( mesh.vertices() );
-				final RefSet< Triangle > cc = RefCollections.createRefSet( mesh.triangles() );
+				final RefDeque< V > queue = RefCollections.createRefDeque( mesh.vertices() );
+				final RefSet< T > cc = RefCollections.createRefSet( mesh.triangles() );
 				while ( it.hasNext() )
 				{
 					// Get a starting point that was never visited.
-					final Vertex start = it.next();
+					final V start = it.next();
 					if ( visited.contains( start ) )
 						continue;
 
@@ -167,14 +170,14 @@ public class MeshConnectedComponents
 					queue.add( start );
 					while ( !queue.isEmpty() )
 					{
-						final Vertex v = queue.pop( vref1 );
+						final V v = queue.pop( vref1 );
 						if ( visited.contains( v ) )
 							continue;
 
 						visited.add( v );
-						for ( final HalfEdge e : v.edges() )
+						for ( final E e : v.edges() )
 						{
-							final Vertex o = Graphs.getOppositeVertex( e, v, vref1 );
+							final V o = Graphs.getOppositeVertex( e, v, vref1 );
 							if ( !visited.contains( o ) )
 							{
 								queue.add( o );
@@ -194,16 +197,16 @@ public class MeshConnectedComponents
 			return null;
 		}
 
-		private TriMesh makeCC( final RefSet< Triangle > cc )
+		private TriMesh makeCC( final RefSet< T > cc )
 		{
 			final TriMesh out = new TriMesh( cc.size() );
 
-			final Vertex ivref = mesh.vertexRef();
+			final V ivref = mesh.vertexRef();
 			final Vertex ovref0 = out.vertexRef();
 			final Vertex ovref1 = out.vertexRef();
 			final Vertex ovref2 = out.vertexRef();
 			final Triangle otref = out.triangleRef();
-			final TriangleAdder triangleAdder = out.triangleAdder();
+			final TriangleAdderI< Triangle, Vertex > triangleAdder = out.triangleAdder();
 
 			try
 			{
@@ -211,26 +214,20 @@ public class MeshConnectedComponents
 				final IntRefMap< Vertex > vMap = RefMaps.createIntRefMap( out.vertices(), -1 );
 
 				// Copy vertices.
-				final RefSet< Vertex > inVertices = Meshes.verticesOf( cc, mesh );
-				for ( final Vertex vIn : inVertices )
+				final RefSet< V > inVertices = Meshes.verticesOf( cc, mesh );
+				for ( final V vIn : inVertices )
 				{
 					final Vertex vOut = out.addVertex( ovref0 );
-					vOut.init( vIn.x(), vIn.y(), vIn.z() );
-					vMap.put( vIn.getInternalPoolIndex(), vOut );
+					vOut.setPosition( vIn );
+					vMap.put( vIn.id(), vOut );
 				}
 
 				// Copy faces.
-				for ( final Triangle inT : cc )
+				for ( final T inT : cc )
 				{
-					final int id0 = inT.getVertex0( ivref ).getInternalPoolIndex();
-					final Vertex ov0 = vMap.get( id0, ovref0 );
-
-					final int id1 = inT.getVertex1( ivref ).getInternalPoolIndex();
-					final Vertex ov1 = vMap.get( id1, ovref1 );
-
-					final int id2 = inT.getVertex2( ivref ).getInternalPoolIndex();
-					final Vertex ov2 = vMap.get( id2, ovref2 );
-
+					final Vertex ov0 = vMap.get( inT.v0(), ovref0 );
+					final Vertex ov1 = vMap.get( inT.v1(), ovref1 );
+					final Vertex ov2 = vMap.get( inT.v2(), ovref2 );
 					triangleAdder.add( ov0, ov1, ov2, otref );
 				}
 				return out;
@@ -245,7 +242,5 @@ public class MeshConnectedComponents
 				mesh.releaseRef( ivref );
 			}
 		}
-
 	}
-
 }

@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.mastodon.mesh.io.PLYMeshIO;
+import org.mastodon.mesh.obj.core.TriMesh;
 
 import net.imagej.mesh.Mesh;
 
