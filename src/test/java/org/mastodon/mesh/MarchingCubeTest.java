@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.mastodon.mesh.alg.MeshConnectedComponents;
 import org.mastodon.mesh.io.PLYMeshIO;
+import org.mastodon.mesh.obj.core.TriMesh;
 
 import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
@@ -44,40 +45,8 @@ public class MarchingCubeTest
 			smoothed = img;
 
 		final double isoLevel = 250;
-		TriMesh mesh1 = Meshes.marchingCubes( smoothed, isoLevel );
-		System.out.println( "Before removing duplicates: " + mesh1 );
-		mesh1 = Meshes.removeDuplicateVertices( mesh1, 2 );
-		System.out.println( "After removing duplicates: " + mesh1 );
-		System.out.println( "Scaling." );
-		Meshes.scale( mesh1, pixelSizes );
-		System.out.println( "Saving." );
-		PLYMeshIO.save( mesh1, filePath + "-c1.ply" );
-		System.out.println( "Done." );
-
-		// Test topology.
-		System.out.println( "Results:" );
-		System.out.println( mesh1 );
-		System.out.println( "Is two-manifold: " + Meshes.isTwoManifold( mesh1 ) );
-		System.out.println( "N connected components: " + Meshes.nConnectedComponents( mesh1 ) );
-		System.out.println( "Splitting in connected components:" );
-		int i = 0;
-		for ( final TriMesh cc : MeshConnectedComponents.iterable( mesh1 ) )
-		{
-			i++;
-			System.out.println( " # " + i + ": " + cc );
-			PLYMeshIO.save( cc, filePath + "-c1-" + i + ".ply" );
-		}
-		System.out.println( "Simplifying to 10%:" );
-		i = 0;
-		for ( final TriMesh cc : MeshConnectedComponents.iterable( mesh1 ) )
-		{
-			i++;
-			final TriMesh simplified = Meshes.simplify( cc, 0.1, 10 );
-			System.out.println( " # " + i + ": " + simplified );
-			PLYMeshIO.save( simplified, filePath + "-c1-simplified-" + i + ".ply" );
-		}
-
-		System.out.println();
+		final TriMesh mesh1 = Meshes.marchingCubes( smoothed, isoLevel );
+		runMesh( mesh1, pixelSizes, filePath, "-grayscale" );
 
 		// Second channel is the mask.
 		System.out.println( "Marching cube on the mask." );
@@ -87,10 +56,44 @@ public class MarchingCubeTest
 		else
 			c2 = img;
 		final RandomAccessibleInterval< BitType > mask = RealTypeConverters.convert( c2, new BitType() );
-		TriMesh mesh2 = Meshes.marchingCubes( mask );
-		mesh2 = Meshes.removeDuplicateVertices( mesh2, 0 );
-		Meshes.scale( mesh2, pixelSizes );
-		PLYMeshIO.save( mesh2, filePath + "-c2.ply" );
+		final TriMesh mesh2 = Meshes.marchingCubes( mask );
+		runMesh( mesh2, pixelSizes, filePath, "-mask" );
+	}
+
+	private static void runMesh( TriMesh mesh, final double[] pixelSizes, final String filePath, final String suffix ) throws IOException
+	{
+		System.out.println( "Before removing duplicates: " + mesh );
+		mesh = Meshes.removeDuplicateVertices( mesh, 2 );
+		System.out.println( "After removing duplicates: " + mesh );
+		System.out.println( "Scaling." );
+		Meshes.scale( mesh, pixelSizes );
+		System.out.println( "Saving." );
+		PLYMeshIO.save( mesh, filePath + suffix + ".ply" );
 		System.out.println( "Done." );
+
+		// Test topology.
+		System.out.println( "Results:" );
+		System.out.println( mesh );
+		System.out.println( "Is two-manifold: " + Meshes.isTwoManifold( mesh ) );
+		System.out.println( "N connected components: " + Meshes.nConnectedComponents( mesh ) );
+		System.out.println( "Splitting in connected components:" );
+		int i = 0;
+		for ( final TriMesh cc : MeshConnectedComponents.iterable( mesh ) )
+		{
+			i++;
+			System.out.println( " # " + i + ": " + cc + " - two-manifold: " + Meshes.isTwoManifold( cc ) );
+			PLYMeshIO.save( cc, filePath + "-c1-" + i + ".ply" );
+		}
+		System.out.println( "Simplifying to 10%:" );
+		i = 0;
+		for ( final TriMesh cc : MeshConnectedComponents.iterable( mesh ) )
+		{
+			i++;
+			final TriMesh simplified = Meshes.simplify( cc, 0.1, 10 );
+			System.out.println( " # " + i + ": " + simplified + " - two-manifold: " + Meshes.isTwoManifold( simplified ) );
+			PLYMeshIO.save( simplified, filePath + suffix + "-simplified-" + i + ".ply" );
+		}
+
+		System.out.println();
 	}
 }
