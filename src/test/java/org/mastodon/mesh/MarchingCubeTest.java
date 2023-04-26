@@ -82,7 +82,7 @@ public class MarchingCubeTest
 		{
 			i++;
 			System.out.println( " # " + i + ": " + cc + " - two-manifold: " + Meshes.isTwoManifold( cc ) );
-			PLYMeshIO.save( cc, filePath + "-c1-" + i + ".ply" );
+			PLYMeshIO.save( cc, filePath + suffix + "-" + i + ".ply" );
 		}
 		System.out.println( "Simplifying to 10%:" );
 		i = 0;
