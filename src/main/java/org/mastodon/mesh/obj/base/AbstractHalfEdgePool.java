@@ -19,7 +19,7 @@ public abstract class AbstractHalfEdgePool<
 
 	final IntAttribute< E > twin;
 
-	final IntAttribute< E > face;
+	final IntAttribute< E > triangle;
 
 	TP trianglePool;
 
@@ -34,7 +34,7 @@ public abstract class AbstractHalfEdgePool<
 		this.next = new IntAttribute<>( layout.next, this );
 		this.previous = new IntAttribute<>( layout.previous, this );
 		this.twin = new IntAttribute<>( layout.twin, this );
-		this.face = new IntAttribute<>( layout.face, this );
+		this.triangle = new IntAttribute<>( layout.face, this );
 	}
 
 	public void setLinkedTrianglePool( final TP trianglePool )
