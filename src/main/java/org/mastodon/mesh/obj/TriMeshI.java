@@ -3,7 +3,11 @@ package org.mastodon.mesh.obj;
 import org.mastodon.collection.RefCollection;
 import org.mastodon.graph.Graph;
 
-public interface TriMeshI< V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > extends Graph< V, E >
+public interface TriMeshI< 
+			V extends VertexI< E >, 
+			E extends HalfEdgeI< E, V, T >, 
+			T extends TriangleI< V, E > > 
+	extends Graph< V, E >
 {
 
 	public RefCollection< T > triangles();

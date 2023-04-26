@@ -37,7 +37,7 @@ import net.imglib2.type.numeric.RealType;
 public class Meshes
 {
 
-	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > FinalRealInterval boundingBox( final TriMeshI< V, E, T > mesh )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > FinalRealInterval boundingBox( final TriMeshI< V, E, T > mesh )
 	{
 		final double[] min = new double[] { Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY };
 		final double[] max = new double[] { Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
@@ -156,7 +156,7 @@ public class Meshes
 	 * @return new mesh without duplicate vertices. The result will not include
 	 *         normals or uv coordinates.
 	 */
-	public static < V extends VertexI< ? >, T extends TriangleI< V > > TriMesh removeDuplicateVertices( final TriMeshI< V, ?, T > mesh, final int precision )
+	public static < V extends VertexI< ? >, T extends TriangleI< V, ? > > TriMesh removeDuplicateVertices( final TriMeshI< V, ?, T > mesh, final int precision )
 	{
 		return RemoveDuplicateVertices.calculate( mesh, precision );
 	}
@@ -181,7 +181,7 @@ public class Meshes
 	 *            the collection of triangles.
 	 * @return a new {@link RefSet}.
 	 */
-	public static final < V extends VertexI< ? >, T extends TriangleI< V > > RefSet< V > verticesOf( final Iterable< T > triangles, final TriMeshI< V, ?, T > mesh )
+	public static final < V extends VertexI< ? >, T extends TriangleI< V, ? > > RefSet< V > verticesOf( final Iterable< T > triangles, final TriMeshI< V, ?, T > mesh )
 	{
 		final RefSet< V > vertices = RefCollections.createRefSet( mesh.vertices() );
 		final V v0 = mesh.vertexRef();
@@ -228,7 +228,7 @@ public class Meshes
 	 *            the mesh to split.
 	 * @return a new iterator over its connected components as new meshes.
 	 */
-	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > Iterator< TriMesh > iterator( final TriMeshI< V, E, T > mesh )
+	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > Iterator< TriMesh > iterator( final TriMeshI< V, E, T > mesh )
 	{
 		return MeshConnectedComponents.iterator( mesh );
 	}
@@ -244,7 +244,7 @@ public class Meshes
 	 *            the mesh to split.
 	 * @return a new iterable over its connected components as new meshes.
 	 */
-	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > Iterable< TriMesh > iterable( final TriMeshI< V, E, T > mesh )
+	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > Iterable< TriMesh > iterable( final TriMeshI< V, E, T > mesh )
 	{
 		return MeshConnectedComponents.iterable( mesh );
 	}
@@ -259,7 +259,7 @@ public class Meshes
 	 *            the mesh to inspect.
 	 * @return <code>true</code> if it is two-manifold.
 	 */
-	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > boolean isTwoManifold( final TriMeshI< V, E, T > mesh )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > boolean isTwoManifold( final TriMeshI< V, E, T > mesh )
 	{
 		return TwoManifold.isTwoManifold( mesh );
 	}
@@ -281,7 +281,7 @@ public class Meshes
 	 * @return the simplified mesh The result will not include normals or uv
 	 *         coordinates.
 	 */
-	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > TriMesh simplify( final TriMeshI< V, E, T > mesh, final double target_percent, final double agressiveness )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > TriMesh simplify( final TriMeshI< V, E, T > mesh, final double target_percent, final double agressiveness )
 	{
 		return new SimplifyMesh< V, E, T >( mesh ).simplify( target_percent, agressiveness );
 	}

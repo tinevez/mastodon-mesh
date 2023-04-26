@@ -49,7 +49,7 @@ import net.imglib2.RealPoint;
  * @author Deborah Schmidt / frauzufall
  * @author Jean-Yves Tinevez
  */
-public class SimplifyMesh< V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > >
+public class SimplifyMesh< V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > >
 {
 
 	private final Vector< Triangle > triangles = new Vector<>();
@@ -666,6 +666,9 @@ public class SimplifyMesh< V extends VertexI< E >, E extends HalfEdgeI< E, V, T 
 		}
 		finally
 		{
+			mesh.releaseRef( vref0 );
+			mesh.releaseRef( vref1 );
+			mesh.releaseRef( vref2 );
 			mesh.releaseRef( tref );
 			adder.releaseRefs();
 		}

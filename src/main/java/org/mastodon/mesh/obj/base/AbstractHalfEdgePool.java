@@ -8,7 +8,7 @@ import org.mastodon.pool.attributes.IntAttribute;
 public abstract class AbstractHalfEdgePool<
 				E extends AbstractHalfEdge< E, V, ?, ?, TP, M >,
 				V extends AbstractVertex< V, E, ?, ?, M >,
-				TP extends AbstractTrianglePool< ?, V, ?, M >, 
+				TP extends AbstractTrianglePool< ?, V, E, ?, ?, M >, 
 				M extends MappedElement >
 		extends AbstractEdgePool< E, V, M >
 {

@@ -86,7 +86,7 @@ public class MeshConnectedComponents
 	 *            the mesh to split.
 	 * @return a new iterator over its connected components as new meshes.
 	 */
-	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > Iterator< TriMesh > iterator( final TriMeshI< V, E, T > mesh )
+	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > Iterator< TriMesh > iterator( final TriMeshI< V, E, T > mesh )
 	{
 		return new MyCCIterator< V, E, T >( mesh );
 	}
@@ -102,7 +102,7 @@ public class MeshConnectedComponents
 	 *            the mesh to split.
 	 * @return a new iterable over its connected components as new meshes.
 	 */
-	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > Iterable< TriMesh > iterable( final TriMeshI< V, E, T > mesh )
+	public static final < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > Iterable< TriMesh > iterable( final TriMeshI< V, E, T > mesh )
 	{
 		return new Iterable< TriMesh >()
 		{
@@ -115,7 +115,7 @@ public class MeshConnectedComponents
 		};
 	}
 
-	private static final class MyCCIterator< V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > implements Iterator< TriMesh >
+	private static final class MyCCIterator< V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > implements Iterator< TriMesh >
 	{
 
 		private final TriMeshI< V, E, T > mesh;

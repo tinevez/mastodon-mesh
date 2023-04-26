@@ -8,9 +8,9 @@ import org.mastodon.pool.attributes.IntAttributeValue;
 public class AbstractHalfEdge<
 		E extends AbstractHalfEdge< E, V, T, EP, TP, M >,
 				V extends AbstractVertex< V, E, T, ?, M >,
-				T extends AbstractTriangle< T, V, ?, M >,
+				T extends AbstractTriangle< T, V, E, ?, EP, M >,
 				EP extends AbstractHalfEdgePool< E, V, TP, M >,
-				TP extends AbstractTrianglePool< T, V, ?, M >, 
+				TP extends AbstractTrianglePool< T, V, E, ?, EP, M >, 
 				M extends MappedElement >
 		extends AbstractEdge< E, V, EP, M >
 		implements HalfEdgeI< E, V, T >
@@ -66,6 +66,11 @@ public class AbstractHalfEdge<
 	public T triangle( final T ref )
 	{
 		return pool.trianglePool.getObjectIfExists( triangle.get(), ref );
+	}
+
+	public boolean isBorder(final E eref, final T tref)
+	{
+		return ( twin( eref ).triangle( tref ) == null ) || ( triangle( tref ) == null );
 	}
 
 	void init( final E eNext, final E ePrevious, final E eTwin, final T eTriangle )

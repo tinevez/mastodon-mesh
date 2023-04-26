@@ -9,10 +9,10 @@ import org.mastodon.pool.PoolCollectionWrapper;
 public class AbstractTriMesh<
 				VP extends AbstractVertexPool< V, E, T, M >,
 				EP extends AbstractHalfEdgePool< E, V, TP, M >,
-				TP extends AbstractTrianglePool< T, V, VP, M >,
+				TP extends AbstractTrianglePool< T, V, E, VP, EP, M >,
 				V extends AbstractVertex< V, E, T, VP, M >,
 				E extends AbstractHalfEdge< E, V, T, EP, TP, M >,
-				T extends AbstractTriangle< T, V, TP, M >,
+				T extends AbstractTriangle< T, V, E, TP, EP, M >,
 				M extends MappedElement >
 		extends GraphImp< VP, EP, V, E, M >
 		implements TriMeshI< V, E, T >

@@ -8,7 +8,7 @@ import org.mastodon.mesh.obj.core.TriMesh;
  *
  * @author Jean-Yves Tinevez
  */
-public interface TriangleAdderI< T extends TriangleI< V >, V extends VertexI< ? > >
+public interface TriangleAdderI< T extends TriangleI< V, ? >, V extends VertexI< ? > >
 {
 
 	public T add( final V v0, final V v1, final V v2, final T ref );

@@ -21,7 +21,7 @@ import net.imglib2.RealLocalizable;
 public class RemoveDuplicateVertices
 {
 
-	public static < V extends VertexI< ? >, T extends TriangleI< V > > TriMesh calculate( final TriMeshI< V, ?, T > in, final int precision )
+	public static < V extends VertexI< ? >, T extends TriangleI< V, ? > > TriMesh calculate( final TriMeshI< V, ?, T > in, final int precision )
 	{
 		final TriMesh out = new TriMesh();
 

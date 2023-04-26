@@ -8,8 +8,6 @@ import org.mastodon.mesh.obj.core.TriMesh;
 import org.mastodon.mesh.util.GeomUtil;
 import org.mastodon.pool.PoolCollectionWrapper;
 
-import net.imglib2.util.Util;
-
 /**
  * Facility to add a face to a {@link TriMesh}. Built to ensure that the ref
  * objects will not be used outside of this class.
@@ -20,7 +18,7 @@ import net.imglib2.util.Util;
 public class AbstractTriangleAdder<
 					V extends AbstractVertex< V, E, T, ?, ? >,
 					E extends AbstractHalfEdge< E, V, T, ?, ?, ? >,
-					T extends AbstractTriangle< T, V, ?, ? > >
+					T extends AbstractTriangle< T, V, E, ?, ?, ? > >
 		implements TriangleAdderI< T, V >
 {
 
@@ -95,15 +93,10 @@ public class AbstractTriangleAdder<
 			return null;
 
 		GeomUtil.crossProduct( v1, v0, v2, v0, crossProduct );
-		final boolean colinear = crossProduct[ 0 ] == 0. && crossProduct[ 1 ] == 0. && crossProduct[ 2 ] == 0.;
+		final boolean colinear = ( Double.isNaN( crossProduct[ 0 ] ) || Double.isNaN( crossProduct[ 1 ] ) || Double.isNaN( crossProduct[ 2 ] ) )
+				|| ( crossProduct[ 0 ] == 0. && crossProduct[ 1 ] == 0. && crossProduct[ 2 ] == 0. );
 		if ( colinear )
-		{
-			System.out.println( "colinear edges:" );
-			System.out.println( " - " + v0 + " -> " + v1 ); // DEBUG
-			System.out.println( " - " + v0 + " -> " + v2 ); // DEBUG
-			System.out.println( Util.printCoordinates( crossProduct ) ); // DEBUG
 			throw new IllegalArgumentException( "Cannot create a face with colinear vertices." );
-		}
 
 		// Compute normals.
 		GeomUtil.normalize( crossProduct );

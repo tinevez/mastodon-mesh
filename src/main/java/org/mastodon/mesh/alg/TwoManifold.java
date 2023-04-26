@@ -18,7 +18,7 @@ public class TwoManifold
 	 *            the mesh to inspect.
 	 * @return <code>true</code> if it is two-manifold.
 	 */
-	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V > > boolean isTwoManifold( final TriMeshI< V, E, T > mesh )
+	public static < V extends VertexI< E >, E extends HalfEdgeI< E, V, T >, T extends TriangleI< V, E > > boolean isTwoManifold( final TriMeshI< V, E, T > mesh )
 	{
 		final V vref0 = mesh.vertexRef();
 		final V vref1 = mesh.vertexRef();

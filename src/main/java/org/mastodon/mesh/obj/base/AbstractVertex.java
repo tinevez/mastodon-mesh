@@ -9,7 +9,7 @@ import org.mastodon.util.DelegateRealPositionable;
 public class AbstractVertex<
 				V extends AbstractVertex< V, E, T, VP, M >,
 				E extends AbstractHalfEdge<E,V, T, ?, ?, M>,
-				T extends AbstractTriangle< T, V, ?, M >,
+				T extends AbstractTriangle< T, V, E, ?, ?, M >,
 				VP extends AbstractVertexPool< V, E, T, M >,
 				M extends MappedElement >
 		extends org.mastodon.graph.ref.AbstractVertex< V, E, VP, M >

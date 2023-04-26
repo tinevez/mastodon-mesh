@@ -24,7 +24,7 @@ public class TriMesh extends AbstractTriMesh< VertexPool, HalfEdgePool, Triangle
 	public TriMesh( final int nVertices, final int nTriangles, final int nEdges )
 	{
 		super( new HalfEdgePool( nEdges, new VertexPool( nVertices ) ) );
-		trianglePool = new TrianglePool( nTriangles, vertexPool );
+		trianglePool = new TrianglePool( nTriangles, vertexPool, edgePool );
 		edgePool.setLinkedTrianglePool( trianglePool );
 	}
 }

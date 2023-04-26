@@ -7,7 +7,7 @@ import org.mastodon.pool.attributes.RealFloatPointAttribute;
 public abstract class AbstractVertexPool<
 				V extends AbstractVertex< V, E, T, ?, M >,
 				E extends AbstractHalfEdge< E, V, T, ?, ?, M>,
-				T extends AbstractTriangle< T, V, ?, M >, 
+				T extends AbstractTriangle< T, V, E, ?, ?, M >, 
 				M extends MappedElement  >
 		extends org.mastodon.graph.ref.AbstractVertexPool< V, E, M >
 {
