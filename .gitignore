@@ -19,3 +19,7 @@ buildNumber.properties
 
 # Samples
 samples
+
+# MacOS
+.DS_Store
+
