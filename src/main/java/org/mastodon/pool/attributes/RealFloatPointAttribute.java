@@ -1,6 +1,6 @@
 package org.mastodon.pool.attributes;
 
-import static org.mastodon.pool.ByteUtils.DOUBLE_SIZE;
+import static org.mastodon.pool.ByteUtils.FLOAT_SIZE;
 
 import org.mastodon.pool.AbstractAttribute;
 import org.mastodon.pool.MappedElement;
@@ -99,7 +99,7 @@ public class RealFloatPointAttribute< O extends PoolObject< O, ?, ? > > extends 
 		@Override
 		public void move( final double distance, final int d )
 		{
-			RealFloatPointAttribute.this.move( obj, distance, d );
+			RealFloatPointAttribute.this.move( obj, ( float ) distance, d );
 		}
 
 		@Override
@@ -147,7 +147,7 @@ public class RealFloatPointAttribute< O extends PoolObject< O, ?, ? > > extends 
 		@Override
 		public void setPosition( final double position, final int d )
 		{
-			RealFloatPointAttribute.this.setPosition( obj, position, d );
+			RealFloatPointAttribute.this.setPosition( obj, ( float ) position, d );
 		}
 
 		@Override
@@ -239,7 +239,7 @@ public class RealFloatPointAttribute< O extends PoolObject< O, ?, ? > > extends 
 		@Override
 		public void move( final double distance, final int d )
 		{
-			RealFloatPointAttribute.this.moveQuiet( obj, distance, d );
+			RealFloatPointAttribute.this.moveQuiet( obj, ( float ) distance, d );
 		}
 
 		@Override
@@ -287,7 +287,7 @@ public class RealFloatPointAttribute< O extends PoolObject< O, ?, ? > > extends 
 		@Override
 		public void setPosition( final double position, final int d )
 		{
-			RealFloatPointAttribute.this.setPositionQuiet( obj, position, d );
+			RealFloatPointAttribute.this.setPositionQuiet( obj, ( float ) position, d );
 		}
 
 		@Override
@@ -376,24 +376,24 @@ public class RealFloatPointAttribute< O extends PoolObject< O, ?, ? > > extends 
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			position[ d ] = ( float ) a.getDouble( offset + d * DOUBLE_SIZE );
+			position[ d ] = a.getFloat( offset + d * FLOAT_SIZE );
 	}
 
 	public void localize( final O key, final double[] position )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			position[ d ] = a.getDouble( offset + d * DOUBLE_SIZE );
+			position[ d ] = a.getFloat( offset + d * FLOAT_SIZE );
 	}
 
 	public float getFloatPosition( final O key, final int d )
 	{
-		return ( float ) access( key ).getDouble( offset + d * DOUBLE_SIZE );
+		return access( key ).getFloat( offset + d * FLOAT_SIZE );
 	}
 
 	public double getDoublePosition( final O key, final int d )
 	{
-		return access( key ).getDouble( offset + d * DOUBLE_SIZE );
+		return access( key ).getFloat( offset + d * FLOAT_SIZE );
 	}
 
 	/*
@@ -414,7 +414,7 @@ public class RealFloatPointAttribute< O extends PoolObject< O, ?, ? > > extends 
 		notifyPropertyChanged( key );
 	}
 
-	public void setPosition( final O key, final double position, final int d )
+	public void setPosition( final O key, final float position, final int d )
 	{
 		notifyBeforePropertyChange( key );
 		setPositionQuiet( key, position, d );
@@ -456,7 +456,7 @@ public class RealFloatPointAttribute< O extends PoolObject< O, ?, ? > > extends 
 		notifyPropertyChanged( key );
 	}
 
-	public void move( final O key, final double distance, final int d )
+	public void move( final O key, final float distance, final int d )
 	{
 		notifyBeforePropertyChange( key );
 		moveQuiet( key, distance, d );
@@ -503,98 +503,98 @@ public class RealFloatPointAttribute< O extends PoolObject< O, ?, ? > > extends 
 	 * that do not sent property change events.
 	 */
 
-	private static void addInPlace( final MappedElement a, final int index, final double increment )
+	private static void addInPlace( final MappedElement a, final int index, final float increment )
 	{
-		a.putDouble( a.getDouble( index ) + increment, index );
+		a.putFloat( a.getFloat( index ) + increment, index );
 	}
 
 	public void fwdQuiet( final O key, final int d )
 	{
-		addInPlace( access( key ), offset + d * DOUBLE_SIZE, 1 );
+		addInPlace( access( key ), offset + d * FLOAT_SIZE, 1f );
 	}
 
 	public void bckQuiet( final O key, final int d )
 	{
-		addInPlace( access( key ), offset + d * DOUBLE_SIZE, -1 );
+		addInPlace( access( key ), offset + d * FLOAT_SIZE, -1f );
 	}
 
-	public void setPositionQuiet( final O key, final double position, final int d )
+	public void setPositionQuiet( final O key, final float position, final int d )
 	{
-		access( key ).putDouble( position, offset + d * DOUBLE_SIZE );
+		access( key ).putFloat( position, offset + d * FLOAT_SIZE );
 	}
 
 	public void setPositionQuiet( final O key, final int[] position )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			a.putDouble( position[ d ], offset + d * DOUBLE_SIZE );
+			a.putFloat( position[ d ], offset + d * FLOAT_SIZE );
 	}
 
 	public void setPositionQuiet( final O key, final long[] position )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			a.putDouble( position[ d ], offset + d * DOUBLE_SIZE );
+			a.putFloat( position[ d ], offset + d * FLOAT_SIZE );
 	}
 
 	public void setPositionQuiet( final O key, final float[] position )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			a.putDouble( position[ d ], offset + d * DOUBLE_SIZE );
+			a.putFloat( position[ d ], offset + d * FLOAT_SIZE );
 	}
 
 	public void setPositionQuiet( final O key, final double[] position )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			a.putDouble( position[ d ], offset + d * DOUBLE_SIZE );
+			a.putFloat( ( float ) position[ d ], offset + d * FLOAT_SIZE );
 	}
 
 	public void setPositionQuiet( final O key, final RealLocalizable localizable )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			a.putDouble( localizable.getDoublePosition( d ), offset + d * DOUBLE_SIZE );
+			a.putFloat( localizable.getFloatPosition( d ), offset + d * FLOAT_SIZE );
 	}
 
-	public void moveQuiet( final O key, final double distance, final int d )
+	public void moveQuiet( final O key, final float distance, final int d )
 	{
-		addInPlace( access( key ), offset + d * DOUBLE_SIZE, distance );
+		addInPlace( access( key ), offset + d * FLOAT_SIZE, distance );
 	}
 
 	public void moveQuiet( final O key, final int[] distance )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			addInPlace( a, offset + d * DOUBLE_SIZE, distance[ d ] );
+			addInPlace( a, offset + d * FLOAT_SIZE, distance[ d ] );
 	}
 
 	public void moveQuiet( final O key, final long[] distance )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			addInPlace( a, offset + d * DOUBLE_SIZE, distance[ d ] );
+			addInPlace( a, offset + d * FLOAT_SIZE, distance[ d ] );
 	}
 
 	public void moveQuiet( final O key, final float[] distance )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			addInPlace( a, offset + d * DOUBLE_SIZE, distance[ d ] );
+			addInPlace( a, offset + d * FLOAT_SIZE, distance[ d ] );
 	}
 
 	public void moveQuiet( final O key, final double[] distance )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			addInPlace( a, offset + d * DOUBLE_SIZE, distance[ d ] );
+			addInPlace( a, offset + d * FLOAT_SIZE, ( float ) distance[ d ] );
 	}
 
 	public void moveQuiet( final O key, final RealLocalizable localizable )
 	{
 		final MappedElement a = access( key );
 		for ( int d = 0; d < n; ++d )
-			addInPlace( a, offset + d * DOUBLE_SIZE, localizable.getDoublePosition( d ) );
+			addInPlace( a, offset + d * FLOAT_SIZE, localizable.getFloatPosition( d ) );
 	}
 }
