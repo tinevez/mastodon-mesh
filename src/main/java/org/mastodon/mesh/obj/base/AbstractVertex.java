@@ -26,6 +26,15 @@ public class AbstractVertex<
 	}
 
 	@Override
+	protected void setToUninitializedState()
+	{
+		super.setToUninitializedState();
+		position.setPosition( 0f, 0 );
+		position.setPosition( 0f, 1 );
+		position.setPosition( 0f, 2 );
+	}
+
+	@Override
 	public RealPointAttributeValue delegate()
 	{
 		return position;
@@ -36,27 +45,27 @@ public class AbstractVertex<
 	{
 		return String.format( "V%d (X=%.2f, Y=%.2f, Z=%.2f)",
 				getInternalPoolIndex(),
-				getDoublePosition( 0 ),
-				getDoublePosition( 1 ),
-				getDoublePosition( 2 ) );
+				x(),
+				y(),
+				z() );
 	}
 
 	@Override
 	public double x()
 	{
-		return getDoublePosition( 0 );
+		return getFloatPosition( 0 );
 	}
 
 	@Override
 	public double y()
 	{
-		return getDoublePosition( 1 );
+		return getFloatPosition( 1 );
 	}
 
 	@Override
 	public double z()
 	{
-		return getDoublePosition( 2 );
+		return getFloatPosition( 2 );
 	}
 
 	@Override
