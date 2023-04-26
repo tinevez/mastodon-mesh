@@ -89,20 +89,13 @@ public class Meshes
 		// Add triangles and half-edges.
 		final TriangleAdderI< Triangle, Vertex > adder = mesh.triangleAdder();
 		final Triangle tref = mesh.triangleRef();
-		final Vertex vref0 = mesh.vertexRef();
-		final Vertex vref1 = mesh.vertexRef();
-		final Vertex vref2 = mesh.vertexRef();
 		for ( int i = 0; i < source.triangles().size(); i++ )
 		{
-			final Vertex v0 = map.get( ( int ) source.triangles().vertex0( i ), vref0 );
-			final Vertex v1 = map.get( ( int ) source.triangles().vertex1( i ), vref1 );
-			final Vertex v2 = map.get( ( int ) source.triangles().vertex2( i ), vref2 );
-			adder.add( v0, v1, v2, tref );
+			final int vid0 = ( int ) source.triangles().vertex0( i );
+			final int vid1 = ( int ) source.triangles().vertex1( i );
+			final int vid2 = ( int ) source.triangles().vertex2( i );
+			adder.add( vid0, vid1, vid2, tref );
 		}
-		mesh.releaseRef( vref0 );
-		mesh.releaseRef( vref1 );
-		mesh.releaseRef( vref2 );
-		mesh.releaseRef( tref );
 		adder.releaseRefs();
 
 		return mesh;

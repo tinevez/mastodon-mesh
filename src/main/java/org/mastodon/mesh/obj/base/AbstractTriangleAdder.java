@@ -1,8 +1,14 @@
 package org.mastodon.mesh.obj.base;
 
+import org.mastodon.RefPool;
+import org.mastodon.collection.RefCollection;
 import org.mastodon.mesh.obj.TriMeshI;
 import org.mastodon.mesh.obj.TriangleAdderI;
+import org.mastodon.mesh.obj.core.TriMesh;
 import org.mastodon.mesh.util.GeomUtil;
+import org.mastodon.pool.PoolCollectionWrapper;
+
+import net.imglib2.util.Util;
 
 /**
  * Facility to add a face to a {@link TriMesh}. Built to ensure that the ref
@@ -30,6 +36,12 @@ public class AbstractTriangleAdder<
 
 	private final TriMeshI< V, E, T > mesh;
 
+	private final V vref0;
+
+	private final V vref1;
+
+	private final V vref2;
+
 	protected AbstractTriangleAdder( final TriMeshI< V, E, T > mesh )
 	{
 		this.mesh = mesh;
@@ -38,6 +50,25 @@ public class AbstractTriangleAdder<
 		this.eref2 = mesh.edgeRef();
 		this.eref3 = mesh.edgeRef();
 		this.eref4 = mesh.edgeRef();
+		this.vref0 = mesh.vertexRef();
+		this.vref1 = mesh.vertexRef();
+		this.vref2 = mesh.vertexRef();
+	}
+
+	@Override
+	public T add( final int v0id, final int v1id, final int v2id, final T ref )
+	{
+		final RefCollection< V > vertices = mesh.vertices();
+		if ( vertices instanceof PoolCollectionWrapper< ? > )
+		{
+			final PoolCollectionWrapper< V > wrapper = ( PoolCollectionWrapper< V > ) vertices;
+			final RefPool< V > vertexPool = wrapper.getRefPool();
+			final V v0 = vertexPool.getObjectIfExists( v0id, vref0 );
+			final V v1 = vertexPool.getObjectIfExists( v1id, vref1 );
+			final V v2 = vertexPool.getObjectIfExists( v2id, vref2 );
+			return add( v0, v1, v2, ref );
+		}
+		throw new UnsupportedOperationException( "Adding triangle via vertex indices is not supported for " + vertices.getClass().getSimpleName() );
 	}
 
 	/**
@@ -66,7 +97,13 @@ public class AbstractTriangleAdder<
 		GeomUtil.crossProduct( v1, v0, v2, v0, crossProduct );
 		final boolean colinear = crossProduct[ 0 ] == 0. && crossProduct[ 1 ] == 0. && crossProduct[ 2 ] == 0.;
 		if ( colinear )
+		{
+			System.out.println( "colinear edges:" );
+			System.out.println( " - " + v0 + " -> " + v1 ); // DEBUG
+			System.out.println( " - " + v0 + " -> " + v2 ); // DEBUG
+			System.out.println( Util.printCoordinates( crossProduct ) ); // DEBUG
 			throw new IllegalArgumentException( "Cannot create a face with colinear vertices." );
+		}
 
 		// Compute normals.
 		GeomUtil.normalize( crossProduct );
@@ -112,9 +149,12 @@ public class AbstractTriangleAdder<
 	@Override
 	public void releaseRefs()
 	{
-		mesh.edges().releaseRef( eref1 );
-		mesh.edges().releaseRef( eref2 );
-		mesh.edges().releaseRef( eref3 );
-		mesh.edges().releaseRef( eref4 );
+		mesh.releaseRef( eref1 );
+		mesh.releaseRef( eref2 );
+		mesh.releaseRef( eref3 );
+		mesh.releaseRef( eref4 );
+		mesh.releaseRef( vref0 );
+		mesh.releaseRef( vref1 );
+		mesh.releaseRef( vref2 );
 	}
 }

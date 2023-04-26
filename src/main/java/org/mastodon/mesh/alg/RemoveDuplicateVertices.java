@@ -1,6 +1,5 @@
 package org.mastodon.mesh.alg;
 
-import org.mastodon.RefPool;
 import org.mastodon.collection.ObjectRefMap;
 import org.mastodon.collection.RefMaps;
 import org.mastodon.mesh.obj.TriMeshI;
@@ -54,20 +53,10 @@ public class RemoveDuplicateVertices
 
 		final TriangleAdderI< Triangle, Vertex > triangleAdder = out.triangleAdder();
 		final Triangle tref = out.triangleRef();
-		final Vertex ovref0 = out.vertexRef();
-		final Vertex ovref1 = out.vertexRef();
-		final Vertex ovref2 = out.vertexRef();
-		final RefPool< Vertex > pool = out.vertices().getRefPool();
+
 		for ( final int[] triangle : triangles )
-		{
-			final Vertex v0 = pool.getObjectIfExists( triangle[ 0 ], ovref0 );
-			final Vertex v1 = pool.getObjectIfExists( triangle[ 1 ], ovref1 );
-			final Vertex v2 = pool.getObjectIfExists( triangle[ 2 ], ovref2 );
-			triangleAdder.add( v0, v1, v2, tref );
-		}
-		out.releaseRef( ovref0 );
-		out.releaseRef( ovref1 );
-		out.releaseRef( ovref2 );
+			triangleAdder.add( triangle[ 0 ], triangle[ 1 ], triangle[ 2 ], tref );
+
 		out.releaseRef( tref );
 		triangleAdder.releaseRefs();
 
