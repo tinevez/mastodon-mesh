@@ -2,7 +2,7 @@ package org.mastodon.mesh.obj.base;
 
 import org.mastodon.pool.MappedElement;
 import org.mastodon.pool.MemPool;
-import org.mastodon.pool.attributes.RealPointAttribute;
+import org.mastodon.pool.attributes.RealFloatPointAttribute;
 
 public abstract class AbstractVertexPool<
 				V extends AbstractVertex< V, E, T, ?, M >,
@@ -12,7 +12,7 @@ public abstract class AbstractVertexPool<
 		extends org.mastodon.graph.ref.AbstractVertexPool< V, E, M >
 {
 
-	final RealPointAttribute< V > position;
+	final RealFloatPointAttribute< V > position;
 
 	public AbstractVertexPool(
 			final int initialCapacity,
@@ -21,16 +21,16 @@ public abstract class AbstractVertexPool<
 			final MemPool.Factory< M > memPoolFactory )
 	{
 		super( initialCapacity, layout, vertexClass, memPoolFactory );
-		this.position = new RealPointAttribute<>( layout.position, this );
+		this.position = new RealFloatPointAttribute<>( layout.position, this );
 	}
 
 	public static class BaseVertexLayout extends AbstractVertexLayout
 	{
-		final DoubleArrayField position;
+		final FloatArrayField position;
 
 		public BaseVertexLayout()
 		{
-			position = doubleArrayField( 3 );
+			position = floatArrayField( 3 );
 		}
 	}
 }
