@@ -1,6 +1,6 @@
 package org.mastodon.mesh.obj.base;
 
-import org.mastodon.mesh.TriangleI;
+import org.mastodon.mesh.obj.TriangleI;
 import org.mastodon.pool.MappedElement;
 import org.mastodon.pool.PoolObject;
 

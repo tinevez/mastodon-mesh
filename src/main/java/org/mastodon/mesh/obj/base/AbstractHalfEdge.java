@@ -1,7 +1,7 @@
 package org.mastodon.mesh.obj.base;
 
 import org.mastodon.graph.ref.AbstractEdge;
-import org.mastodon.mesh.HalfEdgeI;
+import org.mastodon.mesh.obj.HalfEdgeI;
 import org.mastodon.pool.MappedElement;
 
 public class AbstractHalfEdge<

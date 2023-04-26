@@ -1,6 +1,6 @@
 package org.mastodon.mesh.obj.base;
 
-import org.mastodon.mesh.VertexI;
+import org.mastodon.mesh.obj.VertexI;
 import org.mastodon.pool.MappedElement;
 import org.mastodon.pool.attributes.RealPointAttributeValue;
 import org.mastodon.util.DelegateRealLocalizable;

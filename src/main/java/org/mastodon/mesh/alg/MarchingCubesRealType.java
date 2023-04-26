@@ -1,7 +1,7 @@
 package org.mastodon.mesh.alg;
 
 import org.apache.commons.math3.util.MathArrays;
-import org.mastodon.mesh.TriangleAdderI;
+import org.mastodon.mesh.obj.TriangleAdderI;
 import org.mastodon.mesh.obj.core.TriMesh;
 import org.mastodon.mesh.obj.core.Triangle;
 import org.mastodon.mesh.obj.core.Vertex;

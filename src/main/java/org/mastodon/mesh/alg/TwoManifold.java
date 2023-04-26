@@ -1,9 +1,9 @@
 package org.mastodon.mesh.alg;
 
-import org.mastodon.mesh.HalfEdgeI;
-import org.mastodon.mesh.TriMeshI;
-import org.mastodon.mesh.TriangleI;
-import org.mastodon.mesh.VertexI;
+import org.mastodon.mesh.obj.HalfEdgeI;
+import org.mastodon.mesh.obj.TriMeshI;
+import org.mastodon.mesh.obj.TriangleI;
+import org.mastodon.mesh.obj.VertexI;
 
 public class TwoManifold
 {

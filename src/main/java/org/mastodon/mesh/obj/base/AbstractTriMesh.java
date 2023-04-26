@@ -1,8 +1,8 @@
 package org.mastodon.mesh.obj.base;
 
 import org.mastodon.graph.ref.GraphImp;
-import org.mastodon.mesh.TriMeshI;
-import org.mastodon.mesh.TriangleAdderI;
+import org.mastodon.mesh.obj.TriMeshI;
+import org.mastodon.mesh.obj.TriangleAdderI;
 import org.mastodon.pool.MappedElement;
 import org.mastodon.pool.PoolCollectionWrapper;
 

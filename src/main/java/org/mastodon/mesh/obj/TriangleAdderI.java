@@ -1,4 +1,4 @@
-package org.mastodon.mesh;
+package org.mastodon.mesh.obj;
 
 /**
  * Facility to add a face to a {@link TriMesh}. Built to ensure that the ref

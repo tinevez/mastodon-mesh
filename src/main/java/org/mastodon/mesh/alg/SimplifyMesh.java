@@ -4,11 +4,11 @@ import java.util.Vector;
 
 import org.mastodon.collection.IntRefMap;
 import org.mastodon.collection.RefMaps;
-import org.mastodon.mesh.HalfEdgeI;
-import org.mastodon.mesh.TriMeshI;
-import org.mastodon.mesh.TriangleAdderI;
-import org.mastodon.mesh.TriangleI;
-import org.mastodon.mesh.VertexI;
+import org.mastodon.mesh.obj.HalfEdgeI;
+import org.mastodon.mesh.obj.TriMeshI;
+import org.mastodon.mesh.obj.TriangleAdderI;
+import org.mastodon.mesh.obj.TriangleI;
+import org.mastodon.mesh.obj.VertexI;
 import org.mastodon.mesh.obj.core.TriMesh;
 
 import net.imglib2.RealPoint;

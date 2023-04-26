@@ -15,7 +15,7 @@ import java.util.List;
 import org.mastodon.collection.IntRefMap;
 import org.mastodon.collection.RefIntMap;
 import org.mastodon.collection.RefMaps;
-import org.mastodon.mesh.TriangleAdderI;
+import org.mastodon.mesh.obj.TriangleAdderI;
 import org.mastodon.mesh.obj.core.TriMesh;
 import org.mastodon.mesh.obj.core.Triangle;
 import org.mastodon.mesh.obj.core.Vertex;

@@ -1,7 +1,7 @@
 package org.mastodon.mesh.util;
 
-import org.mastodon.mesh.HalfEdgeI;
-import org.mastodon.mesh.VertexI;
+import org.mastodon.mesh.obj.HalfEdgeI;
+import org.mastodon.mesh.obj.VertexI;
 
 public class GeomUtil
 {

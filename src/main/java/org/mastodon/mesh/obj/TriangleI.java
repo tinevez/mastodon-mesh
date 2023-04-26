@@ -1,4 +1,4 @@
-package org.mastodon.mesh;
+package org.mastodon.mesh.obj;
 
 public interface TriangleI< V extends VertexI< ? > >
 {

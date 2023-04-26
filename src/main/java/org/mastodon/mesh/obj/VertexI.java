@@ -1,4 +1,4 @@
-package org.mastodon.mesh;
+package org.mastodon.mesh.obj;
 
 import net.imglib2.EuclideanSpace;
 import net.imglib2.RealLocalizable;

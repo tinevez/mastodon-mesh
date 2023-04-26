@@ -1,4 +1,4 @@
-package org.mastodon.mesh;
+package org.mastodon.mesh.obj;
 
 import org.mastodon.graph.Edge;
 
